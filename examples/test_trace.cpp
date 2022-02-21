@@ -16,12 +16,15 @@ void bax() {
 }
 
 bool baz(const char* str) {
-    auto lambda = [&str](int i){
+    auto lambda = [&str](int &i){
         i++;
+        
         bax();
     };
 
-    lambda(41);
+    int test = 41;
+
+    lambda(test);
     return true;
 }
 

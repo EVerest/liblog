@@ -17,9 +17,13 @@ struct StackTrace {
 };
 
 inline int frame_handler(void* data, uintptr_t pc, const char* filename, int lineno, const char* function) {
-    if ((filename == nullptr) && (lineno == 0) && (function == nullptr)) {
-        return 1; // stop backtracing
-    }
+    // FIXME(aw): we might have unknown frames everywhere in the call
+    //            stack, it probably only make sense to skip the
+    //            contigeous set of the top/root frames, that are all
+    //            unknown
+    // if ((filename == nullptr) && (lineno == 0) && (function == nullptr)) {
+    //     return 1; // stop backtracing
+    // }
     auto& trace = *static_cast<StackTrace*>(data);
 
     std::string function_name = "<function unknown>";
@@ -37,7 +41,7 @@ inline int frame_handler(void* data, uintptr_t pc, const char* filename, int lin
         }
     }
 
-    trace.info += filename;
+    trace.info += (filename != nullptr) ? filename : "<filename unknown>";
     trace.info += (":" + std::to_string(lineno) + " @ ");
     trace.info += function_name;
     trace.info += "\n";
