@@ -97,8 +97,6 @@ add_subdirectory(3rd_party)
 # logging library
 add_subdirectory(lib)
 
-
-
 option(BUILD_EXAMPLES "Build liblog example binaries." OFF)
 if(BUILD_EXAMPLES)
     message("Building liblog example binaries.")
