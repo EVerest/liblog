@@ -7,7 +7,7 @@ ExternalProject_Add(
 # download
     GIT_REPOSITORY https://github.com/ianlancetaylor/libbacktrace
     GIT_TAG 2446c66076480ce07a6bd868badcbceb3eeecc2e
-    GIT_SHALLOW true
+    GIT_SHALLOW false
 # update
     UPDATE_COMMAND ""
 # configure
