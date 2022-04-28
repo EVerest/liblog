@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     if (vm.count("logconf") != 0) {
         logging_config = vm["logconf"].as<std::string>();
     }
-    Everest::Logging::init(logging_config, "hello there");
+    everest::logging::init(logging_config, "hello there");
 
     EVLOG(debug) << "logging_config was set to " << logging_config;
 

@@ -7,12 +7,12 @@
 class TraceTest {
 public:
     static void do_trace(bool) {
-        std::cout << Everest::Logging::trace();
+        std::cout << everest::logging::trace();
     }
 };
 
 void bax() {
-    std::cout << Everest::Logging::trace();
+    std::cout << everest::logging::trace();
 }
 
 bool baz(const char* str) {

@@ -9,7 +9,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace Everest {
+namespace everest {
 ///
 /// \brief base class for all everest logic exceptions
 class EverestBaseError : public boost::exception {
@@ -67,7 +67,7 @@ public:
     using EverestBaseRuntimeError::EverestBaseRuntimeError;
 };
 
-} // namespace Everest
+} // namespace everest
 
 #define EVEXCEPTION(ex, ...)                                                                                           \
     ex((static_cast<const std::ostringstream&>(metamacro_foreach(_EVEXCEPTION_INTERNALS, <<, __VA_ARGS__))).str())

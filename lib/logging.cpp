@@ -27,11 +27,11 @@
     } while (0);
 
 namespace fs = boost::filesystem;
-namespace logging = boost::log::BOOST_LOG_VERSION_NAMESPACE;
-namespace attrs = logging::attributes;
+namespace boost_logging = boost::log::BOOST_LOG_VERSION_NAMESPACE;
+namespace attrs = boost_logging::attributes;
 
-namespace Everest {
-namespace Logging {
+namespace everest {
+namespace logging {
 std::array<std::string, 5> severity_strings = {
     "DEBUG",    //
     "INFO",     //
@@ -48,7 +48,7 @@ std::array<std::string, 5> severity_strings_colors = {
     "", //
 };
 
-attrs::mutable_constant<std::string> current_process_name(logging::aux::get_process_name());
+attrs::mutable_constant<std::string> current_process_name(boost_logging::aux::get_process_name());
 
 // The operator puts a human-friendly representation of the severity level to the stream
 std::ostream& operator<<(std::ostream& strm, severity_level level) {
@@ -88,16 +88,16 @@ void init(const std::string& logconf, std::string process_name) {
     BOOST_LOG_FUNCTION();
 
     // add useful attributes
-    logging::add_common_attributes();
-    logging::core::get()->add_global_attribute("Process", current_process_name);
+    boost_logging::add_common_attributes();
+    boost_logging::core::get()->add_global_attribute("Process", current_process_name);
     if (!process_name.empty()) {
         current_process_name.set(process_name);
     }
-    logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
+    boost_logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
 
     // Before initializing the library from settings, we need to register any custom filter and formatter factories
-    logging::register_simple_filter_factory<severity_level>("Severity");
-    logging::register_simple_formatter_factory<severity_level, char>("Severity");
+    boost_logging::register_simple_filter_factory<severity_level>("Severity");
+    boost_logging::register_simple_formatter_factory<severity_level, char>("Severity");
 
     // open logging.ini config file located at our base_dir and use it to configure boost::log logging (filters and
     // format)
@@ -108,7 +108,7 @@ void init(const std::string& logconf, std::string process_name) {
                                                           std::string(fs::absolute(logging_path).c_str())));
     }
 
-    auto settings = logging::parse_settings(logging_config);
+    auto settings = boost_logging::parse_settings(logging_config);
 
     auto sink = settings["Sinks.Console"].get_section();
 
@@ -122,7 +122,7 @@ void init(const std::string& logconf, std::string process_name) {
     severity_strings_colors[severity_level::critical] =
         sink["SeverityStringColorCritical"].get<std::string>().get_value_or("");
 
-    logging::init_from_settings(settings);
+    boost_logging::init_from_settings(settings);
 
     EVLOG(info) << "Logger initialized (using " << logconf << ")...";
 }
@@ -132,5 +132,5 @@ void update_process_name(std::string process_name) {
         current_process_name.set(process_name);
     }
 }
-} // namespace Logging
-} // namespace Everest
+} // namespace logging
+} // namespace everest

@@ -57,8 +57,8 @@ inline int frame_handler(void* data, uintptr_t pc, const char* filename, int lin
 
 #endif
 
-namespace Everest {
-namespace Logging {
+namespace everest {
+namespace logging {
 std::string trace() {
 #ifdef WITH_LIBBACKTRACE
     {
@@ -86,5 +86,5 @@ std::string trace() {
     return "Backtrace functionality not built in\n";
 #endif
 }
-} // namespace Logging
-} // namespace Everest
+} // namespace logging
+} // namespace everest
