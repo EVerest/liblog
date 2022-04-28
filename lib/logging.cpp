@@ -15,8 +15,8 @@
 #include <boost/log/utility/setup/settings_parser.hpp>
 #include <fstream>
 
-#include <everest/exceptions.hpp>
-#include <everest/logging.hpp>
+#include <everest/logging/exceptions.hpp>
+#include <everest/logging/logging.hpp>
 
 // this will only be used while bootstrapping our logging (e.g. the logging settings aren't yet applied)
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)

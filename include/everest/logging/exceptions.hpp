@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
-#ifndef EXCEPTIONS_HPP
-#define EXCEPTIONS_HPP
+// Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
+#ifndef EVEREST_LOGGING_EXCEPTIONS_HPP
+#define EVEREST_LOGGING_EXCEPTIONS_HPP
 
 #include <boost/exception/exception.hpp>
-#include <everest/metamacros.hpp>
+#include <everest/logging/metamacros.hpp>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -73,4 +73,4 @@ public:
     ex((static_cast<const std::ostringstream&>(metamacro_foreach(_EVEXCEPTION_INTERNALS, <<, __VA_ARGS__))).str())
 #define _EVEXCEPTION_INTERNALS(index, arg) metamacro_if_eq(0, index)(std::ostringstream() << arg)(arg)
 
-#endif // EXCEPTIONS_HPP
+#endif // EVEREST_LOGGING_EXCEPTIONS_HPP

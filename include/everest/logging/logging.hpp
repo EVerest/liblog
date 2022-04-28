@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2022 Pionix GmbH and Contributors to EVerest
-#ifndef LOGGING_HPP
-#define LOGGING_HPP
+#ifndef EVEREST_LOGGING_LOGGING_HPP
+#define EVEREST_LOGGING_LOGGING_HPP
 
 #include <boost/current_function.hpp>
 #include <boost/exception/diagnostic_information.hpp>
@@ -64,4 +64,4 @@ BOOST_LOG_INLINE_GLOBAL_LOGGER_DEFAULT(
     global_logger,
     boost::log::BOOST_LOG_VERSION_NAMESPACE::sources::severity_logger_mt<everest::logging::severity_level>)
 
-#endif // LOGGING_HPP
+#endif // EVEREST_LOGGING_LOGGING_HPP
