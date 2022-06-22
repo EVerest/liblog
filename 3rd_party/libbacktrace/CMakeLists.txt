@@ -1,7 +1,7 @@
 include(ExternalProject)
 
 set(LIBBACKTRACE_HOST "")
-if(EVEREST_CROSS_COMPILE)
+if(LIBLOG_CROSS_COMPILE)
     set(LIBBACKTRACE_HOST "--host=arm-linux")
 endif()
 
