@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
+#include <boost/date_time/posix_time/time_formatters_limited.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/log/attributes/current_process_id.hpp>
 #include <boost/log/attributes/current_process_name.hpp>
@@ -92,11 +93,62 @@ std::istream& operator>>(std::istream& strm, severity_level& level) {
     return strm;
 }
 
+class CallbackSink : public logging::sinks::sink {
+private:
+    std::function<void(const LogRecord& record)> log_callback;
+
+public:
+    CallbackSink(bool cross_thread, const std::function<void(const LogRecord& record)>& log_callback) :
+        sink(cross_thread), log_callback(log_callback) {
+    }
+
+    bool will_consume(logging::attribute_value_set const& attributes) {
+        return true;
+    }
+
+    void consume(logging::record_view const& rec) {
+        LogRecord log_record;
+
+        log_record.message = *rec[logging::expressions::smessage];
+
+        if (logging::value_ref<severity_level> severity = rec["Severity"].extract<severity_level>()) {
+            log_record.severity = *severity;
+        }
+        if (logging::value_ref<boost::posix_time::ptime> timestamp =
+                rec["TimeStamp"].extract<boost::posix_time::ptime>()) {
+            log_record.timestamp = boost::posix_time::to_iso_extended_string(*timestamp);
+            // TODO: conversion to chrono type?
+        }
+        if (logging::value_ref<std::string> process = rec["Process"].extract<std::string>()) {
+            log_record.process = *process;
+        }
+        if (logging::value_ref<std::string> function = rec["function"].extract<std::string>()) {
+            log_record.function = *function;
+
+        }
+
+        log_callback(log_record);
+    }
+
+    void flush() {
+    }
+};
+
 void init(const std::string& logconf) {
     init(logconf, "");
 }
 
+void init(const std::string& logconf,
+          const std::function<void(const LogRecord& record)>& log_callback) {
+    init(logconf, "", log_callback);
+}
+
 void init(const std::string& logconf, std::string process_name) {
+    init(logconf, process_name, nullptr);
+}
+
+void init(const std::string& logconf, std::string process_name,
+          const std::function<void(const LogRecord& record)>& log_callback) {
     BOOST_LOG_FUNCTION();
 
     // add useful attributes
@@ -113,6 +165,12 @@ void init(const std::string& logconf, std::string process_name) {
         current_process_name.set(padded_process_name);
     }
     logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
+
+    // register callback sink if a log callback was provided
+    if (log_callback != nullptr) {
+        auto callback_sink = boost::make_shared<CallbackSink>(true, log_callback);
+        logging::core::get()->add_sink(callback_sink);
+    }
 
     // Before initializing the library from settings, we need to register any custom filter and formatter factories
     logging::register_simple_filter_factory<severity_level>("Severity");

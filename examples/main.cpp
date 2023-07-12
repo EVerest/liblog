@@ -13,6 +13,7 @@ int main(int argc, char* argv[]) {
     po::options_description desc("EVerest::log example");
     desc.add_options()("help,h", "produce help message");
     desc.add_options()("logconf", po::value<std::string>(), "The path to a custom logging.ini");
+    desc.add_options()("callback,c", "Use example log callback");
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -28,7 +29,27 @@ int main(int argc, char* argv[]) {
     if (vm.count("logconf") != 0) {
         logging_config = vm["logconf"].as<std::string>();
     }
-    Everest::Logging::init(logging_config, "hello there");
+
+    if (vm.count("callback") != 0) {
+        std::cout << "Using log callback" << std::endl;
+        Everest::Logging::init(logging_config, "hello there", [](const Everest::Logging::LogRecord& record) {
+            std::cout << "Message: " << record.message << std::endl;
+            if (record.severity.has_value()) {
+                std::cout << "Severity: " << *record.severity << std::endl;
+            }
+            if (record.timestamp.has_value()) {
+                std::cout << "TimeStamp: " << *record.timestamp << std::endl;
+            }
+            if (record.process.has_value()) {
+                std::cout << "Process: " << *record.process << std::endl;
+            }
+            if (record.function.has_value()) {
+                std::cout << "Function: " << *record.function << std::endl;
+            }
+        });
+    } else {
+        Everest::Logging::init(logging_config, "hello there");
+    }
 
     EVLOG_debug << "logging_config was set to " << logging_config;
 

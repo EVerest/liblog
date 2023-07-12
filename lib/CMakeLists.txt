@@ -21,6 +21,9 @@ target_link_libraries(log
         Boost::log_setup
 )
 
+# we need support for C++17 for std:optional
+target_compile_features(log PUBLIC cxx_std_17)
+
 # FIXME (aw): in case FindBoost.cmake was used we need to add things
 #             this should be removed no support for Boost < 1.74 is needed
 if (NOT Boost_DIR)

@@ -14,6 +14,7 @@
 #include <boost/log/utility/manipulators/add_value.hpp>
 #include <boost/throw_exception.hpp>
 #include <exception>
+#include <optional>
 #include <string>
 
 namespace Everest {
@@ -28,8 +29,19 @@ enum severity_level {
     critical,
 };
 
+struct LogRecord {
+    std::string message;
+    std::optional<severity_level> severity;
+    std::optional<std::string> timestamp;
+    std::optional<std::string> process;
+    std::optional<std::string> function;
+};
+
 void init(const std::string& logconf);
+void init(const std::string& logconf, const std::function<void(const LogRecord& record)>& log_callback);
 void init(const std::string& logconf, std::string process_name);
+void init(const std::string& logconf, std::string process_name,
+          const std::function<void(const LogRecord& record)>& log_callback);
 void update_process_name(std::string process_name);
 std::string trace();
 } // namespace Logging
