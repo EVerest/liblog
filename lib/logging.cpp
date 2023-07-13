@@ -27,9 +27,6 @@
         throw(exception);                                                                                              \
     } while (0);
 
-namespace logging = boost::log::BOOST_LOG_VERSION_NAMESPACE;
-namespace attrs = logging::attributes;
-
 namespace Everest {
 namespace Logging {
 std::array<std::string, 6> severity_strings = {
@@ -121,11 +118,15 @@ public:
         if (logging::value_ref<std::string> process = rec["Process"].extract<std::string>()) {
             log_record.process = *process;
         }
-        if (logging::value_ref<std::string> function = rec["function"].extract<std::string>()) {
+        if (logging::value_ref<std::string> function = rec["Function"].extract<std::string>()) {
             log_record.function = *function;
-
         }
-
+        if (logging::value_ref<int> line = rec["Line"].extract<int>()) {
+            log_record.line = *line;
+        }
+        if (logging::value_ref<std::string> file = rec["File"].extract<std::string>()) {
+            log_record.file = *file;
+        }
         log_callback(log_record);
     }
 
@@ -137,8 +138,7 @@ void init(const std::string& logconf) {
     init(logconf, "");
 }
 
-void init(const std::string& logconf,
-          const std::function<void(const LogRecord& record)>& log_callback) {
+void init(const std::string& logconf, const std::function<void(const LogRecord& record)>& log_callback) {
     init(logconf, "", log_callback);
 }
 
@@ -164,6 +164,9 @@ void init(const std::string& logconf, std::string process_name,
         current_process_name.set(padded_process_name);
     }
     logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
+    logging::core::get()->add_global_attribute("Function", attrs::mutable_constant<std::string>(""));
+    logging::core::get()->add_global_attribute("Line", attrs::mutable_constant<int>(0));
+    logging::core::get()->add_global_attribute("File", attrs::mutable_constant<std::string>(""));
 
     // register callback sink if a log callback was provided
     if (log_callback != nullptr) {

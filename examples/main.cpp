@@ -46,6 +46,12 @@ int main(int argc, char* argv[]) {
             if (record.function.has_value()) {
                 std::cout << "Function: " << *record.function << std::endl;
             }
+            if (record.line.has_value()) {
+                std::cout << "Line: " << *record.line << std::endl;
+            }
+            if (record.file.has_value()) {
+                std::cout << "File: " << *record.file << std::endl;
+            }
         });
     } else {
         Everest::Logging::init(logging_config, "hello there");
