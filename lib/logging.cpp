@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
 #include <boost/date_time/posix_time/time_formatters_limited.hpp>
-#include <boost/filesystem.hpp>
 #include <boost/log/attributes/current_process_id.hpp>
 #include <boost/log/attributes/current_process_name.hpp>
 #include <boost/log/attributes/current_thread_id.hpp>
@@ -15,6 +14,7 @@
 #include <boost/log/utility/setup/settings.hpp>
 #include <boost/log/utility/setup/settings_parser.hpp>
 #include <fstream>
+#include <filesystem>
 
 #include <everest/exceptions.hpp>
 #include <everest/logging.hpp>
@@ -27,7 +27,6 @@
         throw(exception);                                                                                              \
     } while (0);
 
-namespace fs = boost::filesystem;
 namespace logging = boost::log::BOOST_LOG_VERSION_NAMESPACE;
 namespace attrs = logging::attributes;
 
@@ -178,11 +177,11 @@ void init(const std::string& logconf, std::string process_name,
 
     // open logging.ini config file located at our base_dir and use it to configure boost::log logging (filters and
     // format)
-    fs::path logging_path = fs::path(logconf);
+    std::filesystem::path logging_path = std::filesystem::path(logconf);
     std::ifstream logging_config(logging_path.c_str());
     if (!logging_config.is_open()) {
         EVEREST_INTERNAL_LOG_AND_THROW(EverestConfigError(std::string("Could not open logging config file at ") +
-                                                          std::string(fs::absolute(logging_path).c_str())));
+                                                          std::string(std::filesystem::absolute(logging_path).c_str())));
     }
 
     auto settings = logging::parse_settings(logging_config);

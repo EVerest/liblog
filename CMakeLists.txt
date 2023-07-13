@@ -19,7 +19,7 @@ option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 
 
 # library dependencies
-find_package(Boost COMPONENTS log_setup log filesystem REQUIRED)
+find_package(Boost COMPONENTS log_setup log REQUIRED)
 
 
 # third party dependencies

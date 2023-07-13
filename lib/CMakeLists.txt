@@ -17,7 +17,6 @@ target_link_libraries(log
     PUBLIC
         Boost::log
     PRIVATE
-        Boost::filesystem
         Boost::log_setup
 )
 
