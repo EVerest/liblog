@@ -98,7 +98,7 @@ public:
         sink(cross_thread), log_callback(log_callback) {
     }
 
-    bool will_consume(logging::attribute_value_set const& attributes) {
+    bool will_consume([[maybe_unused]] logging::attribute_value_set const& attributes) {
         return true;
     }
 
