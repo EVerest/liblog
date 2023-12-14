@@ -1,4 +1,4 @@
-cake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.11)
 
 project(everest-log
     VERSION 0.2.1
