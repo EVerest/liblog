@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
-#include "../lib/logging.cpp"
-
 #include <gtest/gtest.h>
 
 namespace Everest {
