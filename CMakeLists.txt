@@ -69,6 +69,8 @@ endif()
 # testing
 if(BUILD_TESTING)
     include(CTest)
+    add_subdirectory(tests)
+    
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 
     evc_include(CodeCoverage)
