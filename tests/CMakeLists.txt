@@ -14,5 +14,4 @@ target_link_libraries(${TEST_NAME} PRIVATE
         ${GTEST_MAIN_LIBRARIES}
 )
 
-target_link_libraries(${TEST_NAME} PRIVATE lib gtest_main)
 gtest_discover_tests(${TEST_NAME})
