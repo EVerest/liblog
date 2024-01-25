@@ -17,6 +17,7 @@ option(BUILD_EXAMPLES "Build liblog example binaries." OFF)
 option(LOG_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBLOG_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
+option(LIBLOG_INSTALL_LIBRARY "Install the liblog library (for example when built as a shared library)" OFF)
 
 # library dependencies
 
@@ -62,6 +63,13 @@ if (LOG_INSTALL)
         EXPORT log-targets
         ADDITIONAL_CONTENT
             "find_dependency(Boost COMPONENTS log_setup log)"
+    )
+endif()
+
+if (LIBLOG_INSTALL_LIBRARY)
+    install(
+        TARGETS log
+        LIBRARY
     )
 endif()
 
