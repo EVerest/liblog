@@ -12,4 +12,4 @@ cmake \
 
 ninja -j$(nproc) -C build install
 
-ninja -j$(nproc) -C build tests/test
+ninja -j$(nproc) -C build test
