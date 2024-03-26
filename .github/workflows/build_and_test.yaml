@@ -18,10 +18,7 @@ on:
 jobs:
   lint:
     name: Lint
-    strategy:
-      matrix:
-        os: [ubuntu-22.04]
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ inputs.runner || 'ubuntu-22.04' }}
     steps:
       - name: Checkout liblog
         uses: actions/checkout@v3
