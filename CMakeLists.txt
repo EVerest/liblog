@@ -78,17 +78,18 @@ if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TEST
 
     append_coverage_compiler_flags()
 
-    setup_target_for_coverage_gcovr_html(
-        NAME gcovr_coverage_liblog
-        EXECUTABLE test_config
-        DEPENDENCIES test_config everest
-    )
+    #TODO: Restore once tests actually run.
+    #setup_target_for_coverage_gcovr_html(
+        #NAME gcovr_coverage_liblog
+        #EXECUTABLE test_config
+        #DEPENDENCIES test_config everest
+    #)
 
-    setup_target_for_coverage_lcov(
-        NAME lcov_coverage_liblog
-        EXECUTABLE test_config
-        DEPENDENCIES test_config everest
-    )
+    #setup_target_for_coverage_lcov(
+        #NAME lcov_coverage_liblog
+        #EXECUTABLE test_config
+        #DEPENDENCIES test_config everest
+    #)
 else()
     message("Not running unit tests")
 endif()
