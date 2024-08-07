@@ -107,22 +107,17 @@ private:
 #define EVLOG_error (::Everest::Logging::EverestLogger(BOOST_CURRENT_FUNCTION, spdlog::level::err))
 #define EVLOG_critical (::Everest::Logging::EverestLogger(BOOST_CURRENT_FUNCTION, spdlog::level::critical))
 
-#define EVLOG_AND_THROW(ex)                                                                                            \
-    do {                                                                                                               \
-        try {                                                                                                          \
-            BOOST_THROW_EXCEPTION(boost::enable_error_info(ex)                                                         \
-                                  << boost::log::BOOST_LOG_VERSION_NAMESPACE::current_scope());                        \
-        } catch (std::exception & e) {                                                                                 \
-            EVLOG_error << e.what();                                                                                   \
-            throw;                                                                                                     \
-        }                                                                                                              \
-    } while (0)
-
-#define EVTHROW(ex)                                                                                                    \
-    do {                                                                                                               \
-        BOOST_THROW_EXCEPTION(boost::enable_error_info(ex)                                                             \
-                              << boost::log::BOOST_LOG_VERSION_NAMESPACE::current_scope());                            \
-    } while (0)
 } // namespace Everest
+
+template <class T> constexpr void EVLOG_AND_THROW(const T& ex) {
+    EVLOG_error << ex.what();
+    BOOST_THROW_EXCEPTION(boost::enable_error_info(ex)
+                            << boost::log::BOOST_LOG_VERSION_NAMESPACE::current_scope());
+}
+
+template <class T> constexpr void EVTHROW(const T& ex) {
+    BOOST_THROW_EXCEPTION(boost::enable_error_info(ex)
+                            << boost::log::BOOST_LOG_VERSION_NAMESPACE::current_scope());
+}
 
 #endif // LOGGING_HPP
