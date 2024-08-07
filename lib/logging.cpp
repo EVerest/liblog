@@ -42,25 +42,33 @@ namespace attrs = logging::attributes;
 
 namespace Everest {
 namespace Logging {
-std::array<std::string, 6> severity_strings = {
-    "VERB", //
-    "DEBG", //
-    "INFO", //
-    "WARN", //
-    "ERRO", //
-    "CRIT", //
+
+inline constexpr auto level_verb = 0;
+inline constexpr auto level_debg = 1;
+inline constexpr auto level_info = 2;
+inline constexpr auto level_warn = 3;
+inline constexpr auto level_erro = 4;
+inline constexpr auto level_crit = 5;
+
+const std::array severity_strings = {
+    std::string("VERB"), //
+    std::string("DEBG"), //
+    std::string("INFO"), //
+    std::string("WARN"), //
+    std::string("ERRO"), //
+    std::string("CRIT"), //
 };
 
-std::array<std::string, 6> severity_strings_colors = {
-    "", //
-    "", //
-    "", //
-    "", //
-    "", //
-    "", //
+std::array severity_strings_colors = {
+    std::string(""), //
+    std::string(""), //
+    std::string(""), //
+    std::string(""), //
+    std::string(""), //
+    std::string(""), //
 };
 
-std::string clear_color = "\033[0m";
+const std::string clear_color = "\033[0m";
 
 std::string current_process_name;
 
@@ -83,8 +91,6 @@ std::string get_process_name() {
     return process_name;
 }
 
-
-
 void init(const std::string& logconf) {
     init(logconf, "");
 }
@@ -94,7 +100,7 @@ public:
     explicit FilterSink(const logging::filter& filter) : filter(filter) {
     }
 
-protected:
+private:
     logging::filter filter;
 
     void log(const spdlog::details::log_msg& msg) override {
@@ -146,43 +152,43 @@ public:
     void format(const spdlog::details::log_msg& msg, const std::tm&, spdlog::memory_buf_t& dest) override {
         switch (msg.level) {
         case spdlog::level::level_enum::trace: {
-            auto& color = severity_strings_colors.at(0);
-            auto& verb = severity_strings.at(0);
+            auto& color = severity_strings_colors.at(level_verb);
+            auto& verb = severity_strings.at(level_verb);
             format_message(color, verb, dest);
             break;
         }
         case spdlog::level::level_enum::debug: {
-            auto& color = severity_strings_colors.at(1);
-            auto& debg = severity_strings.at(1);
+            auto& color = severity_strings_colors.at(level_debg);
+            auto& debg = severity_strings.at(level_debg);
             format_message(color, debg, dest);
             break;
         }
         case spdlog::level::level_enum::info: {
-            auto& color = severity_strings_colors.at(2);
-            auto& info = severity_strings.at(2);
+            auto& color = severity_strings_colors.at(level_info);
+            auto& info = severity_strings.at(level_info);
             format_message(color, info, dest);
             break;
         }
         case spdlog::level::level_enum::warn: {
-            auto& color = severity_strings_colors.at(3);
-            auto& warn = severity_strings.at(3);
+            auto& color = severity_strings_colors.at(level_warn);
+            auto& warn = severity_strings.at(level_warn);
             format_message(color, warn, dest);
             break;
         }
         case spdlog::level::level_enum::err: {
-            auto& color = severity_strings_colors.at(4);
-            auto& erro = severity_strings.at(4);
+            auto& color = severity_strings_colors.at(level_erro);
+            auto& erro = severity_strings.at(level_erro);
             format_message(color, erro, dest);
             break;
         }
         case spdlog::level::level_enum::critical: {
-            auto& color = severity_strings_colors.at(5);
-            auto& crit = severity_strings.at(5);
+            auto& color = severity_strings_colors.at(level_crit);
+            auto& crit = severity_strings.at(level_crit);
             format_message(color, crit, dest);
             break;
         }
         case spdlog::level::level_enum::off:
-            break;
+            [[fallthrough]];
         case spdlog::level::level_enum::n_levels:
             break;
         }

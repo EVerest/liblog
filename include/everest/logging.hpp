@@ -61,6 +61,11 @@ public:
         level(level), log_file(false), log_line(false), log_function(false) {
     }
 
+    EverestLogger(const EverestLogger&) = delete;
+    void operator=(const EverestLogger&) = delete;
+    EverestLogger(const EverestLogger&&) = delete;
+    void operator=(const EverestLogger&&) = delete;
+
     ~EverestLogger() {
 #ifdef LIBLOG_OMIT_FILE_AND_LINE_NUMBERS
         log_file = false;
