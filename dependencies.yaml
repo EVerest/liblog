@@ -1,0 +1,10 @@
+libfmt:
+  git: https://github.com/fmtlib/fmt.git
+  git_tag: 10.1.0
+  options:
+    ["FMT_TEST OFF", "FMT_DOC OFF", "BUILD_SHARED_LIBS ON", "FMT_INSTALL ON"]
+spdlog:
+  git: https://github.com/gabime/spdlog.git
+  git_tag: v1.14.1
+  options:
+    ["SPDLOG_NO_TLS ON", "SPDLOG_FMT_EXTERNAL ON"]

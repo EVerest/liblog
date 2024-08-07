@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 project(everest-log
-    VERSION 0.2.1
+    VERSION 0.3
     DESCRIPTION "EVerest logging library"
     LANGUAGES CXX C
 )
@@ -18,6 +18,11 @@ option(BUILD_EXAMPLES "Build liblog example binaries." OFF)
 option(LOG_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBLOG_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
+option(LIBLOG_OMIT_FILE_AND_LINE_NUMBERS "Always omit file and line numbers in logs" OFF)
+
+if(NOT DISABLE_EDM)
+    evc_setup_edm()
+endif()
 
 # library dependencies
 

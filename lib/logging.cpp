@@ -1,23 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
 #ifdef LIBLOG_USE_BOOST_FILESYSTEM
 #include <boost/filesystem.hpp>
 #else
 #include <filesystem>
 #endif
-#include <boost/log/attributes/current_process_id.hpp>
-#include <boost/log/attributes/current_process_name.hpp>
-#include <boost/log/attributes/current_thread_id.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/trivial.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
-#include <boost/log/utility/setup/filter_parser.hpp>
-#include <boost/log/utility/setup/formatter_parser.hpp>
-#include <boost/log/utility/setup/from_settings.hpp>
-#include <boost/log/utility/setup/from_stream.hpp>
-#include <boost/log/utility/setup/settings.hpp>
-#include <boost/log/utility/setup/settings_parser.hpp>
+
+#ifdef __linux__
+#include <unistd.h>
+#endif
+
 #include <fstream>
+
+#include <boost/log/attributes/attribute_set.hpp>
+#include <boost/log/attributes/constant.hpp>
+#include <boost/log/utility/manipulators/add_value.hpp>
+#include <boost/log/utility/setup/filter_parser.hpp>
+#include <boost/log/utility/setup/settings_parser.hpp>
+
+#include <spdlog/pattern_formatter.h>
+#include <spdlog/sinks/ansicolor_sink.h>
 
 #include <everest/exceptions.hpp>
 #include <everest/logging.hpp>
@@ -26,7 +28,7 @@
 // NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
 #define EVEREST_INTERNAL_LOG_AND_THROW(exception)                                                                      \
     do {                                                                                                               \
-        BOOST_LOG_TRIVIAL(fatal) << (exception).what();                                                                \
+        spdlog::critical("{}", (exception).what());                                                                    \
         throw(exception);                                                                                              \
     } while (0);
 
@@ -58,28 +60,164 @@ std::array<std::string, 6> severity_strings_colors = {
     "", //
 };
 
-std::string process_name_padding(const std::string& process_name) {
-    const unsigned int process_name_padding_length = 15;
-    std::string padded_process_name = process_name;
-    if (process_name_padding_length > padded_process_name.size())
-        padded_process_name.insert(padded_process_name.size(), process_name_padding_length, ' ');
-    if (padded_process_name.size() > process_name_padding_length)
-        padded_process_name = padded_process_name.substr(0, process_name_padding_length);
-    return padded_process_name;
+std::string clear_color = "\033[0m";
+
+std::string current_process_name;
+
+std::string get_process_name() {
+    std::string process_name;
+#ifndef __linux__
+    return process_name;
+#endif
+    // first get pid and use it to get the binary name of the running process
+    auto pid = getpid();
+    auto proc = "/proc/" + std::to_string(pid) + "/cmdline";
+    fs::path proc_path = fs::path(proc);
+    std::ifstream cmdline_file(proc_path.c_str());
+    if (cmdline_file.is_open()) {
+        std::string cmdline;
+        cmdline_file >> cmdline;
+        auto cmdline_path = fs::path(cmdline);
+        process_name = cmdline_path.filename();
+    }
+    return process_name;
 }
 
-attrs::mutable_constant<std::string> current_process_name(process_name_padding(logging::aux::get_process_name()));
 
-// The operator puts a human-friendly representation of the severity level to the stream
-std::ostream& operator<<(std::ostream& strm, severity_level level) {
-    if (static_cast<std::size_t>(level) < severity_strings.size()) {
-        strm << severity_strings_colors.at(level) << severity_strings.at(level) << "\033[0m";
-    } else {
-        strm << static_cast<int>(level);
+
+void init(const std::string& logconf) {
+    init(logconf, "");
+}
+
+class FilterSink : public spdlog::sinks::ansicolor_stdout_sink_mt {
+public:
+    explicit FilterSink(const logging::filter& filter) : filter(filter) {
     }
 
-    return strm;
+protected:
+    logging::filter filter;
+
+    void log(const spdlog::details::log_msg& msg) override {
+        if (not filter_msg(msg)) {
+            return;
+        }
+
+        spdlog::sinks::ansicolor_stdout_sink_mt::log(msg);
+    }
+
+    bool filter_msg(const spdlog::details::log_msg& msg) {
+        auto src = logging::attribute_set();
+        // TODO: proper conversion function between msg.level an severity_level
+        src["Severity"] = attrs::constant<severity_level>(static_cast<severity_level>(msg.level));
+        src["Process"] = attrs::constant<std::string>(msg.logger_name.data());
+        // FIXME: support more of the boost log Filter syntax?
+        auto set = logging::attribute_value_set(src, logging::attribute_set(), logging::attribute_set());
+        return filter(set);
+    }
+};
+
+bool is_level(const logging::filter& filter, severity_level level) {
+    auto src = logging::attribute_set();
+    src["Severity"] = attrs::constant<severity_level>(level);
+    src["Process"] = attrs::constant<std::string>("");
+    auto set = logging::attribute_value_set(src, logging::attribute_set(), logging::attribute_set());
+    return filter(set);
 }
+
+spdlog::level::level_enum get_level_from_filter(const logging::filter& filter) {
+    if (is_level(filter, severity_level::verbose)) {
+        return spdlog::level::level_enum::trace;
+    } else if (is_level(filter, severity_level::debug)) {
+        return spdlog::level::level_enum::debug;
+    } else if (is_level(filter, severity_level::info)) {
+        return spdlog::level::level_enum::info;
+    } else if (is_level(filter, severity_level::warning)) {
+        return spdlog::level::level_enum::warn;
+    } else if (is_level(filter, severity_level::error)) {
+        return spdlog::level::level_enum::err;
+    } else if (is_level(filter, severity_level::critical)) {
+        return spdlog::level::level_enum::critical;
+    }
+    return spdlog::level::level_enum::info;
+}
+
+class EverestLevelFormatter : public spdlog::custom_flag_formatter {
+public:
+    void format(const spdlog::details::log_msg& msg, const std::tm&, spdlog::memory_buf_t& dest) override {
+        switch (msg.level) {
+        case spdlog::level::level_enum::trace: {
+            auto& color = severity_strings_colors.at(0);
+            auto& verb = severity_strings.at(0);
+            format_message(color, verb, dest);
+            break;
+        }
+        case spdlog::level::level_enum::debug: {
+            auto& color = severity_strings_colors.at(1);
+            auto& debg = severity_strings.at(1);
+            format_message(color, debg, dest);
+            break;
+        }
+        case spdlog::level::level_enum::info: {
+            auto& color = severity_strings_colors.at(2);
+            auto& info = severity_strings.at(2);
+            format_message(color, info, dest);
+            break;
+        }
+        case spdlog::level::level_enum::warn: {
+            auto& color = severity_strings_colors.at(3);
+            auto& warn = severity_strings.at(3);
+            format_message(color, warn, dest);
+            break;
+        }
+        case spdlog::level::level_enum::err: {
+            auto& color = severity_strings_colors.at(4);
+            auto& erro = severity_strings.at(4);
+            format_message(color, erro, dest);
+            break;
+        }
+        case spdlog::level::level_enum::critical: {
+            auto& color = severity_strings_colors.at(5);
+            auto& crit = severity_strings.at(5);
+            format_message(color, crit, dest);
+            break;
+        }
+        case spdlog::level::level_enum::off:
+            break;
+        case spdlog::level::level_enum::n_levels:
+            break;
+        }
+    }
+
+    std::unique_ptr<custom_flag_formatter> clone() const override {
+        return spdlog::details::make_unique<EverestLevelFormatter>();
+    }
+
+private:
+    void format_message(const std::string& color, const std::string& loglevel, spdlog::memory_buf_t& dest) {
+        if (not color.empty()) {
+            dest.append(color.data(), color.data() + color.size());
+        }
+        dest.append(loglevel.data(), loglevel.data() + loglevel.size());
+        if (not color.empty()) {
+            dest.append(clear_color.data(), clear_color.data() + clear_color.size());
+        }
+    }
+};
+
+class EverestFuncnameFormatter : public spdlog::custom_flag_formatter {
+public:
+    void format(const spdlog::details::log_msg& msg, const std::tm&, spdlog::memory_buf_t& dest) override {
+        if (msg.source.funcname == nullptr) {
+            return;
+        }
+        std::string funcname = msg.source.funcname;
+        dest.append(funcname.data(), funcname.data() + funcname.size());
+    }
+
+    std::unique_ptr<custom_flag_formatter> clone() const override {
+        return spdlog::details::make_unique<EverestFuncnameFormatter>();
+    }
+};
 
 // The operator parses the severity level from the stream
 std::istream& operator>>(std::istream& strm, severity_level& level) {
@@ -100,34 +238,12 @@ std::istream& operator>>(std::istream& strm, severity_level& level) {
     return strm;
 }
 
-void init(const std::string& logconf) {
-    init(logconf, "");
-}
+std::shared_ptr<FilterSink> filter_sink;
 
 void init(const std::string& logconf, std::string process_name) {
-    BOOST_LOG_FUNCTION();
+    current_process_name = get_process_name();
 
-    // add useful attributes
-    logging::add_common_attributes();
-
-    std::string padded_process_name;
-
-    if (!process_name.empty()) {
-        padded_process_name = process_name_padding(process_name);
-    }
-
-    logging::core::get()->add_global_attribute("Process", current_process_name);
-    if (!padded_process_name.empty()) {
-        current_process_name.set(padded_process_name);
-    }
-    logging::core::get()->add_global_attribute("Scope", attrs::named_scope());
-
-    // Before initializing the library from settings, we need to register any custom filter and formatter factories
-    logging::register_simple_filter_factory<severity_level>("Severity");
-    logging::register_simple_formatter_factory<severity_level, char>("Severity");
-
-    // open logging.ini config file located at our base_dir and use it to configure boost::log logging (filters and
-    // format)
+    // open logging.ini config file located at our base_dir and use it to configure filters and format
     fs::path logging_path = fs::path(logconf);
     std::ifstream logging_config(logging_path.c_str());
     if (!logging_config.is_open()) {
@@ -136,6 +252,7 @@ void init(const std::string& logconf, std::string process_name) {
     }
 
     auto settings = logging::parse_settings(logging_config);
+    logging::register_simple_filter_factory<severity_level>("Severity");
 
     auto sink = settings["Sinks.Console"].get_section();
 
@@ -151,17 +268,50 @@ void init(const std::string& logconf, std::string process_name) {
     severity_strings_colors[severity_level::critical] =
         sink["SeverityStringColorCritical"].get<std::string>().get_value_or("");
 
-    logging::init_from_settings(settings);
+    auto core = settings["Core"].get_section();
+
+    auto filter = core["Filter"].get<std::string>().get_value_or("");
+
+    auto parsed_filter = logging::parse_filter(filter);
+
+    filter_sink = std::make_shared<FilterSink>(parsed_filter);
+    update_process_name(process_name);
+
+    auto format = sink["Format"].get<std::string>().get_value_or("");
+
+    // parse the format into a format string that spdlog can use
+    std::vector<std::pair<std::string, std::string>> replacements = {{"%TimeStamp%", "%Y-%m-%d %H:%M:%S.%f"},
+                                                                     {"%Process%", "%-15!n"},
+                                                                     {"%ProcessID%", "%P"},
+                                                                     {"%Severity%", "%l"},
+                                                                     {"%ThreadID%", "%t"},
+                                                                     {"%function%", "%!"},
+                                                                     {"%file%", "%s"},
+                                                                     {"%line%", "%#"},
+                                                                     {"%Message%", "%v"}};
+    for (auto& replace : replacements) {
+        auto pos = format.find(replace.first);
+        while (pos != std::string::npos) {
+            format.replace(pos, replace.first.size(), replace.second);
+            pos = format.find(replace.first, pos + replace.second.size());
+        }
+    }
+
+    auto formatter = std::make_unique<spdlog::pattern_formatter>();
+    formatter->add_flag<Everest::Logging::EverestLevelFormatter>('l').set_pattern(format);
+    formatter->add_flag<Everest::Logging::EverestFuncnameFormatter>('!').set_pattern(format);
+    spdlog::set_formatter(std::move(formatter));
+
+    spdlog::set_level(get_level_from_filter(parsed_filter));
 
     EVLOG_debug << "Logger initialized (using " << logconf << ")...";
 }
 
 void update_process_name(std::string process_name) {
     if (!process_name.empty()) {
-        std::string padded_process_name;
-
-        padded_process_name = process_name_padding(process_name);
-        current_process_name.set(padded_process_name);
+        current_process_name = process_name;
+        auto filter_logger = std::make_shared<spdlog::logger>(current_process_name, filter_sink);
+        spdlog::set_default_logger(filter_logger);
     }
 }
 } // namespace Logging
