@@ -86,12 +86,10 @@ public:
         return *this;
     }
 
-
-
 private:
     std::stringstream log;
     std::string file;
-    int line;
+    int line = 0;
     std::string function;
     spdlog::level::level_enum level;
     bool log_file;
