@@ -91,6 +91,16 @@ public:
         return *this;
     }
 
+    EverestLogger& operator<<(const LogSource& source) {
+        file = source.file;
+        line = source.line;
+        function = source.function;
+        log_file = source.log_file;
+        log_line = source.log_line;
+        log_function = source.log_function;
+        return *this;
+    }
+
 private:
     std::stringstream log;
     std::string file;
