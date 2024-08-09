@@ -8,3 +8,7 @@ spdlog:
   git_tag: v1.14.1
   options:
     ["SPDLOG_NO_TLS ON", "SPDLOG_FMT_EXTERNAL ON"]
+gtest:
+  git: https://github.com/google/googletest.git
+  git_tag: release-1.12.1
+  cmake_condition: "LIBLOG_BUILD_TESTING"

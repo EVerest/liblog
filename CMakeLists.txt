@@ -20,12 +20,20 @@ option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBLOG_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
 option(LIBLOG_OMIT_FILE_AND_LINE_NUMBERS "Always omit file and line numbers in logs" OFF)
 
+if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
+    set(LIBLOG_BUILD_TESTING ON)
+    evc_include(CodeCoverage)
+
+    append_coverage_compiler_flags()
+endif()
+
 if(NOT DISABLE_EDM)
     evc_setup_edm()
 endif()
 
 # library dependencies
-
+# use cmakes FindBoost module until we require Boost 1.70+ which provides its own BoostConfig.cmake
+cmake_policy(SET CMP0167 OLD)
 if (LIBLOG_USE_BOOST_FILESYSTEM) 
     message(STATUS "Using boost/filesystem instead of std::filesystem")
     find_package(Boost COMPONENTS log_setup log filesystem REQUIRED)
@@ -73,26 +81,26 @@ endif()
 
 
 # testing
-if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
-    include(CTest)
-    add_subdirectory(tests)
-    
+if(LIBLOG_BUILD_TESTING)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 
-    evc_include(CodeCoverage)
-
-    append_coverage_compiler_flags()
+    include(CTest)
+    enable_testing()
+    add_subdirectory(tests)
 
     setup_target_for_coverage_gcovr_html(
         NAME gcovr_coverage_liblog
-        EXECUTABLE test_config
-        DEPENDENCIES test_config everest
+        EXECUTABLE ctest
+        DEPENDENCIES ${PROJECT_NAME}_tests
+        EXCLUDE "examples/*"
     )
 
     setup_target_for_coverage_lcov(
         NAME lcov_coverage_liblog
-        EXECUTABLE test_config
-        DEPENDENCIES test_config everest
+        EXECUTABLE ctest
+        DEPENDENCIES ${PROJECT_NAME}_tests
+        LCOV_ARGS "--ignore-errors=empty,missing"
+        EXCLUDE "examples/*"
     )
 else()
     message("Not running unit tests")
