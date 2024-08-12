@@ -20,6 +20,7 @@
 
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/ansicolor_sink.h>
+#include <spdlog/sinks/syslog_sink.h>
 
 // FIXME: move this into a detail header so we do not have to expose this to the world
 #include <everest/rotating_file_sink.hpp>
@@ -151,6 +152,22 @@ private:
     }
 };
 
+class SyslogFilterSink : public spdlog::sinks::syslog_sink_mt, public Filter {
+public:
+    explicit SyslogFilterSink(const logging::filter& filter, std::string indet, int syslog_option, int syslog_facility,
+                              bool enable_formatting) :
+        spdlog::sinks::syslog_sink_mt(indet, syslog_option, syslog_facility, enable_formatting), Filter(filter) {
+    }
+
+private:
+    void sink_it_(const spdlog::details::log_msg& msg) override {
+        if (not filter_msg(msg)) {
+            return;
+        }
+
+        spdlog::sinks::syslog_sink_mt::sink_it_(msg);
+    }
+};
 bool is_level(const logging::filter& filter, severity_level level) {
     auto src = logging::attribute_set();
     src["Severity"] = attrs::constant<severity_level>(level);
@@ -412,6 +429,15 @@ void init(const std::string& logconf, std::string process_name) {
                 std::make_shared<TextFileFilterSink>(parsed_filter, file_name, rotation_size, max_files, false);
             file_sink->set_formatter(std::move(formatter));
             sinks.push_back(file_sink);
+        } else if (destination == "Syslog") {
+            // TODO implement LocalAddress and TargetAddress settings
+            auto enable_formatting = sink["EnableFormatting"].get<bool>().get_value_or(false);
+
+            formatter->add_flag<Everest::Logging::EverestLevelFormatter>('l').set_pattern(format);
+            auto syslog_sink =
+                std::make_shared<SyslogFilterSink>(parsed_filter, process_name, 0, LOG_USER, enable_formatting);
+            syslog_sink->set_formatter(std::move(formatter));
+            sinks.push_back(syslog_sink);
         }
     }
 
