@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
     EVLOG_critical << "This is a CRITICAL message.";
 
     TestStruct test_struct{"there", 42};
-    EVLOG_info << "This logs a TestStruct using a <<operator: " << test_struct;
+    EVLOG_info << "This logs a TestStruct using a operator<<: " << test_struct;
     EVLOG_info << "Test logs with an additional std::endl at the end" << std::endl;
     EVLOG_info << "Test logs with different types: " << 42 << " " << 12.34;
 
