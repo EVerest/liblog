@@ -21,6 +21,9 @@
 #include <spdlog/pattern_formatter.h>
 #include <spdlog/sinks/ansicolor_sink.h>
 
+// FIXME: move this into a detail header so we do not have to expose this to the world
+#include <everest/rotating_file_sink.hpp>
+
 #include <everest/exceptions.hpp>
 #include <everest/logging.hpp>
 
@@ -97,20 +100,9 @@ void init(const std::string& logconf) {
     init(logconf, "");
 }
 
-class FilterSink : public spdlog::sinks::ansicolor_stdout_sink_mt {
+class Filter {
 public:
-    explicit FilterSink(const logging::filter& filter) : filter(filter) {
-    }
-
-private:
-    logging::filter filter;
-
-    void log(const spdlog::details::log_msg& msg) override {
-        if (not filter_msg(msg)) {
-            return;
-        }
-
-        spdlog::sinks::ansicolor_stdout_sink_mt::log(msg);
+    explicit Filter(const logging::filter& filter) : filter(filter) {
     }
 
     bool filter_msg(const spdlog::details::log_msg& msg) {
@@ -121,6 +113,41 @@ private:
         // FIXME: support more of the boost log Filter syntax?
         auto set = logging::attribute_value_set(src, logging::attribute_set(), logging::attribute_set());
         return filter(set);
+    }
+
+private:
+    logging::filter filter;
+};
+
+class ConsoleFilterSink : public spdlog::sinks::ansicolor_stdout_sink_mt, public Filter {
+public:
+    explicit ConsoleFilterSink(const logging::filter& filter) : Filter(filter) {
+    }
+
+private:
+    void log(const spdlog::details::log_msg& msg) override {
+        if (not filter_msg(msg)) {
+            return;
+        }
+
+        spdlog::sinks::ansicolor_stdout_sink_mt::log(msg);
+    }
+};
+
+class TextFileFilterSink : public Everest::Logging::rotating_file_sink_mt, public Filter {
+public:
+    explicit TextFileFilterSink(const logging::filter& filter, spdlog::filename_t base_filename, std::size_t max_size,
+                                std::size_t max_files, bool rotate_on_open) :
+        rotating_file_sink_mt(base_filename, max_size, max_files, rotate_on_open), Filter(filter) {
+    }
+
+private:
+    void sink_it_(const spdlog::details::log_msg& msg) override {
+        if (not filter_msg(msg)) {
+            return;
+        }
+
+        Everest::Logging::rotating_file_sink_mt::sink_it_(msg);
     }
 };
 
@@ -149,7 +176,7 @@ spdlog::level::level_enum get_level_from_filter(const logging::filter& filter) {
     return spdlog::level::level_enum::info;
 }
 
-class EverestLevelFormatter : public spdlog::custom_flag_formatter {
+class EverestColorLevelFormatter : public spdlog::custom_flag_formatter {
 public:
     void format(const spdlog::details::log_msg& msg, const std::tm&, spdlog::memory_buf_t& dest) override {
         switch (msg.level) {
@@ -197,7 +224,7 @@ public:
     }
 
     std::unique_ptr<custom_flag_formatter> clone() const override {
-        return spdlog::details::make_unique<EverestLevelFormatter>();
+        return spdlog::details::make_unique<EverestColorLevelFormatter>();
     }
 
 private:
@@ -209,6 +236,57 @@ private:
         if (not color.empty()) {
             dest.append(clear_color.data(), clear_color.data() + clear_color.size());
         }
+    }
+};
+
+class EverestLevelFormatter : public spdlog::custom_flag_formatter {
+public:
+    void format(const spdlog::details::log_msg& msg, const std::tm&, spdlog::memory_buf_t& dest) override {
+        switch (msg.level) {
+        case spdlog::level::level_enum::trace: {
+            auto& verb = severity_strings.at(level_verb);
+            format_message(verb, dest);
+            break;
+        }
+        case spdlog::level::level_enum::debug: {
+            auto& debg = severity_strings.at(level_debg);
+            format_message(debg, dest);
+            break;
+        }
+        case spdlog::level::level_enum::info: {
+            auto& info = severity_strings.at(level_info);
+            format_message(info, dest);
+            break;
+        }
+        case spdlog::level::level_enum::warn: {
+            auto& warn = severity_strings.at(level_warn);
+            format_message(warn, dest);
+            break;
+        }
+        case spdlog::level::level_enum::err: {
+            auto& erro = severity_strings.at(level_erro);
+            format_message(erro, dest);
+            break;
+        }
+        case spdlog::level::level_enum::critical: {
+            auto& crit = severity_strings.at(level_crit);
+            format_message(crit, dest);
+            break;
+        }
+        case spdlog::level::level_enum::off:
+            [[fallthrough]];
+        case spdlog::level::level_enum::n_levels:
+            break;
+        }
+    }
+
+    std::unique_ptr<custom_flag_formatter> clone() const override {
+        return spdlog::details::make_unique<EverestLevelFormatter>();
+    }
+
+private:
+    void format_message(const std::string& loglevel, spdlog::memory_buf_t& dest) {
+        dest.append(loglevel.data(), loglevel.data() + loglevel.size());
     }
 };
 
@@ -246,7 +324,7 @@ std::istream& operator>>(std::istream& strm, severity_level& level) {
     return strm;
 }
 
-std::shared_ptr<FilterSink> filter_sink;
+std::vector<std::shared_ptr<spdlog::sinks::sink>> sinks;
 
 void init(const std::string& logconf, std::string process_name) {
     if (process_name.empty()) {
@@ -266,20 +344,6 @@ void init(const std::string& logconf, std::string process_name) {
     auto settings = logging::parse_settings(logging_config);
     logging::register_simple_filter_factory<severity_level>("Severity");
 
-    auto sink = settings["Sinks.Console"].get_section();
-
-    severity_strings_colors[severity_level::verbose] =
-        sink["SeverityStringColorTrace"].get<std::string>().get_value_or("");
-    severity_strings_colors[severity_level::debug] =
-        sink["SeverityStringColorDebug"].get<std::string>().get_value_or("");
-    severity_strings_colors[severity_level::info] = sink["SeverityStringColorInfo"].get<std::string>().get_value_or("");
-    severity_strings_colors[severity_level::warning] =
-        sink["SeverityStringColorWarning"].get<std::string>().get_value_or("");
-    severity_strings_colors[severity_level::error] =
-        sink["SeverityStringColorError"].get<std::string>().get_value_or("");
-    severity_strings_colors[severity_level::critical] =
-        sink["SeverityStringColorCritical"].get<std::string>().get_value_or("");
-
     auto core = settings["Core"].get_section();
 
     auto filter = core["Filter"].get<std::string>().get_value_or("");
@@ -287,32 +351,69 @@ void init(const std::string& logconf, std::string process_name) {
     auto parsed_filter = logging::parse_filter(filter);
 
     global_level = get_level_from_filter(parsed_filter);
-    filter_sink = std::make_shared<FilterSink>(parsed_filter);
 
-    auto format = sink["Format"].get<std::string>().get_value_or("");
-
-    // parse the format into a format string that spdlog can use
-    std::vector<std::pair<std::string, std::string>> replacements = {{"%TimeStamp%", "%Y-%m-%d %H:%M:%S.%f"},
-                                                                     {"%Process%", "%-15!n"},
-                                                                     {"%ProcessID%", "%P"},
-                                                                     {"%Severity%", "%l"},
-                                                                     {"%ThreadID%", "%t"},
-                                                                     {"%function%", "%!"},
-                                                                     {"%file%", "%s"},
-                                                                     {"%line%", "%#"},
-                                                                     {"%Message%", "%v"}};
-    for (auto& replace : replacements) {
-        auto pos = format.find(replace.first);
-        while (pos != std::string::npos) {
-            format.replace(pos, replace.first.size(), replace.second);
-            pos = format.find(replace.first, pos + replace.second.size());
-        }
+    if (not settings.has_section("Sinks")) {
+        std::cerr << "No \"Sinks\" section in the logging configuration, at least one sink has be be present"
+                  << std::endl;
+        return; // FIXME: throw an exception here?
     }
 
-    auto formatter = std::make_unique<spdlog::pattern_formatter>();
-    formatter->add_flag<Everest::Logging::EverestLevelFormatter>('l').set_pattern(format);
-    formatter->add_flag<Everest::Logging::EverestFuncnameFormatter>('!').set_pattern(format);
-    spdlog::set_formatter(std::move(formatter));
+    for (auto sink : settings["Sinks"].get_section()) {
+        auto format = sink["Format"].get<std::string>().get_value_or("%TimeStamp% [%Severity%] %Message%");
+
+        // parse the format into a format string that spdlog can use
+        std::vector<std::pair<std::string, std::string>> replacements = {{"%TimeStamp%", "%Y-%m-%d %H:%M:%S.%f"},
+                                                                         {"%Process%", "%-15!n"},
+                                                                         {"%ProcessID%", "%P"},
+                                                                         {"%Severity%", "%l"},
+                                                                         {"%ThreadID%", "%t"},
+                                                                         {"%function%", "%!"},
+                                                                         {"%file%", "%s"},
+                                                                         {"%line%", "%#"},
+                                                                         {"%Message%", "%v"}};
+        for (auto& replace : replacements) {
+            auto pos = format.find(replace.first);
+            while (pos != std::string::npos) {
+                format.replace(pos, replace.first.size(), replace.second);
+                pos = format.find(replace.first, pos + replace.second.size());
+            }
+        }
+
+        auto formatter = std::make_unique<spdlog::pattern_formatter>();
+        formatter->add_flag<Everest::Logging::EverestFuncnameFormatter>('!').set_pattern(format);
+
+        auto destination = sink["Destination"].get<std::string>().get_value_or("");
+        if (destination == "Console") {
+            formatter->add_flag<Everest::Logging::EverestColorLevelFormatter>('l').set_pattern(format);
+
+            severity_strings_colors[severity_level::verbose] =
+                sink["SeverityStringColorTrace"].get<std::string>().get_value_or("");
+            severity_strings_colors[severity_level::debug] =
+                sink["SeverityStringColorDebug"].get<std::string>().get_value_or("");
+            severity_strings_colors[severity_level::info] =
+                sink["SeverityStringColorInfo"].get<std::string>().get_value_or("");
+            severity_strings_colors[severity_level::warning] =
+                sink["SeverityStringColorWarning"].get<std::string>().get_value_or("");
+            severity_strings_colors[severity_level::error] =
+                sink["SeverityStringColorError"].get<std::string>().get_value_or("");
+            severity_strings_colors[severity_level::critical] =
+                sink["SeverityStringColorCritical"].get<std::string>().get_value_or("");
+            auto console_sink = std::make_shared<ConsoleFilterSink>(parsed_filter);
+            console_sink->set_formatter(std::move(formatter));
+            sinks.push_back(console_sink);
+        } else if (destination == "TextFile") {
+            formatter->add_flag<Everest::Logging::EverestLevelFormatter>('l').set_pattern(format);
+
+            auto file_name = sink["FileName"].get<std::string>().get_value_or("%5N.log");
+            auto rotation_size = sink["RotationSize"].get<std::size_t>().get_value_or(0);
+            auto max_files = sink["MaxFiles"].get<std::size_t>().get_value_or(0);
+
+            auto file_sink =
+                std::make_shared<TextFileFilterSink>(parsed_filter, file_name, rotation_size, max_files, false);
+            file_sink->set_formatter(std::move(formatter));
+            sinks.push_back(file_sink);
+        }
+    }
 
     update_process_name(process_name);
 
@@ -322,7 +423,7 @@ void init(const std::string& logconf, std::string process_name) {
 void update_process_name(std::string process_name) {
     if (!process_name.empty()) {
         current_process_name = process_name;
-        auto filter_logger = std::make_shared<spdlog::logger>(current_process_name, filter_sink);
+        auto filter_logger = std::make_shared<spdlog::logger>(current_process_name, std::begin(sinks), std::end(sinks));
         spdlog::set_default_logger(filter_logger);
         spdlog::set_level(global_level);
     }

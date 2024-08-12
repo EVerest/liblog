@@ -19,6 +19,7 @@ target_link_libraries(log
         spdlog::spdlog
     PRIVATE
         Boost::log_setup
+        fmt::fmt
 )
 
 if (LIBLOG_USE_BOOST_FILESYSTEM)
