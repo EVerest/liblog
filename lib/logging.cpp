@@ -72,6 +72,8 @@ const std::string clear_color = "\033[0m";
 
 std::string current_process_name;
 
+spdlog::level::level_enum global_level = spdlog::level::level_enum::trace;
+
 std::string get_process_name() {
     std::string process_name;
 #ifndef __linux__
@@ -125,7 +127,7 @@ private:
 bool is_level(const logging::filter& filter, severity_level level) {
     auto src = logging::attribute_set();
     src["Severity"] = attrs::constant<severity_level>(level);
-    src["Process"] = attrs::constant<std::string>("");
+    src["Process"] = attrs::constant<std::string>(current_process_name);
     auto set = logging::attribute_value_set(src, logging::attribute_set(), logging::attribute_set());
     return filter(set);
 }
@@ -247,7 +249,11 @@ std::istream& operator>>(std::istream& strm, severity_level& level) {
 std::shared_ptr<FilterSink> filter_sink;
 
 void init(const std::string& logconf, std::string process_name) {
-    current_process_name = get_process_name();
+    if (process_name.empty()) {
+        current_process_name = get_process_name();
+    } else {
+        current_process_name = process_name;
+    }
 
     // open logging.ini config file located at our base_dir and use it to configure filters and format
     fs::path logging_path = fs::path(logconf);
@@ -280,8 +286,8 @@ void init(const std::string& logconf, std::string process_name) {
 
     auto parsed_filter = logging::parse_filter(filter);
 
+    global_level = get_level_from_filter(parsed_filter);
     filter_sink = std::make_shared<FilterSink>(parsed_filter);
-    update_process_name(process_name);
 
     auto format = sink["Format"].get<std::string>().get_value_or("");
 
@@ -308,7 +314,7 @@ void init(const std::string& logconf, std::string process_name) {
     formatter->add_flag<Everest::Logging::EverestFuncnameFormatter>('!').set_pattern(format);
     spdlog::set_formatter(std::move(formatter));
 
-    spdlog::set_level(get_level_from_filter(parsed_filter));
+    update_process_name(process_name);
 
     EVLOG_debug << "Logger initialized (using " << logconf << ")...";
 }
@@ -318,6 +324,7 @@ void update_process_name(std::string process_name) {
         current_process_name = process_name;
         auto filter_logger = std::make_shared<spdlog::logger>(current_process_name, filter_sink);
         spdlog::set_default_logger(filter_logger);
+        spdlog::set_level(global_level);
     }
 }
 } // namespace Logging
