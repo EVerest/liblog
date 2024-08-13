@@ -29,6 +29,9 @@ endif()
 
 if(NOT DISABLE_EDM)
     evc_setup_edm()
+
+    # In EDM mode, we can't install exports (because the dependencies usually do not install their exports)
+    set(LOG_INSTALL OFF)
 endif()
 
 # library dependencies
