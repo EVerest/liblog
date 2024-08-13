@@ -92,14 +92,14 @@ if(LIBLOG_BUILD_TESTING)
     add_subdirectory(tests)
 
     setup_target_for_coverage_gcovr_html(
-        NAME gcovr_coverage_liblog
+        NAME ${PROJECT_NAME}_gcovr_coverage
         EXECUTABLE ctest
         DEPENDENCIES ${PROJECT_NAME}_tests
         EXCLUDE "examples/*"
     )
 
     setup_target_for_coverage_lcov(
-        NAME lcov_coverage_liblog
+        NAME ${PROJECT_NAME}_lcov_coverage
         EXECUTABLE ctest
         DEPENDENCIES ${PROJECT_NAME}_tests
         LCOV_ARGS "--ignore-errors=empty,missing"
