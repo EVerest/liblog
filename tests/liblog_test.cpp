@@ -120,6 +120,11 @@ TEST_F(LibLogUnitTest, test_init_console_sink) {
     log_with_all_loglevels();
 }
 
+TEST_F(LibLogUnitTest, test_init_console_sink_defaults) {
+    Everest::Logging::init("logging_configs/console_defaults.ini", "liblog_test");
+    log_with_all_loglevels();
+}
+
 TEST_F(LibLogUnitTest, test_init_console_sink_no_process_name) {
     Everest::Logging::init("logging_configs/console.ini");
     log_with_all_loglevels();

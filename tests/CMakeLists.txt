@@ -22,7 +22,7 @@ add_test(${TEST_TARGET_NAME} ${TEST_TARGET_NAME})
 # copy logging configs
 configure_file(logging_configs/no_sinks.ini logging_configs/no_sinks.ini COPYONLY)
 configure_file(logging_configs/console.ini logging_configs/console.ini COPYONLY)
-
+configure_file(logging_configs/console_defaults.ini logging_configs/console_defaults.ini COPYONLY)
 configure_file(logging_configs/textfile_verb.ini logging_configs/textfile_verb.ini COPYONLY)
 configure_file(logging_configs/textfile_verb_rotate.ini logging_configs/textfile_verb_rotate.ini COPYONLY)
 configure_file(logging_configs/textfile_verb_broken_filename.ini logging_configs/textfile_verb_broken_filename.ini COPYONLY)
