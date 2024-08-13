@@ -29,12 +29,10 @@
 #include <everest/logging.hpp>
 
 // this will only be used while bootstrapping our logging (e.g. the logging settings aren't yet applied)
-// NOLINTNEXTLINE(cppcoreguidelines-macro-usage)
-#define EVEREST_INTERNAL_LOG_AND_THROW(exception)                                                                      \
-    do {                                                                                                               \
-        spdlog::critical("{}", (exception).what());                                                                    \
-        throw(exception);                                                                                              \
-    } while (0);
+template <class T> constexpr void EVEREST_INTERNAL_LOG_AND_THROW(const T& exception) {
+    spdlog::critical("{}", (exception).what());
+    throw exception;
+}
 
 #ifdef LIBLOG_USE_BOOST_FILESYSTEM
 namespace fs = boost::filesystem;
