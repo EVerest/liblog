@@ -56,7 +56,9 @@ public:
         }
 
         if (log_file_name == filename) {
-            log_file_name = fmt::format("{:05}.log", index);
+            spdlog::filename_t basename, ext;
+            std::tie(basename, ext) = spdlog::details::file_helper::split_by_extension(filename);
+            log_file_name = fmt::format("{}{:05}{}", basename, index, ext);
         }
 
         return log_file_name;
