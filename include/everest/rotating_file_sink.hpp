@@ -24,6 +24,9 @@ public:
     rotating_file_sink(spdlog::filename_t base_filename, std::size_t max_size, std::size_t max_files,
                        bool rotate_on_open) :
         base_filename_(std::move(base_filename)), max_size_(max_size), max_files_(max_files) {
+        if (max_files_ > 0) {
+            max_files_ = max_files_ - 1;
+        }
         file_helper_.open(calc_filename(base_filename_, 0));
         current_size_ = file_helper_.size(); // expensive. called only once
         if (max_size != 0 and rotate_on_open && current_size_ > 0) {
