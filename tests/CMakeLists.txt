@@ -32,3 +32,4 @@ configure_file(logging_configs/textfile_warn.ini logging_configs/textfile_warn.i
 configure_file(logging_configs/textfile_erro.ini logging_configs/textfile_erro.ini COPYONLY)
 configure_file(logging_configs/textfile_crit.ini logging_configs/textfile_crit.ini COPYONLY)
 configure_file(logging_configs/textfile_off.ini logging_configs/textfile_off.ini COPYONLY)
+configure_file(logging_configs/syslog.ini logging_configs/syslog.ini COPYONLY)

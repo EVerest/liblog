@@ -240,6 +240,16 @@ TEST_F(LibLogUnitTest, test_init_textfile_sink_verb_broken_filename) {
     ASSERT_EQ(count_log_entries(file_name), 1);
 }
 
+TEST_F(LibLogUnitTest, test_init_syslog_sink) {
+    Everest::Logging::init("logging_configs/syslog.ini", "EVerest");
+    log_with_all_loglevels();
+}
+
+TEST_F(LibLogUnitTest, test_init_syslog_sink_filtered) {
+    Everest::Logging::init("logging_configs/syslog.ini", "Everest");
+    log_with_all_loglevels();
+}
+
 } // namespace tests
 } // namespace Logging
 } // namespace Everest
