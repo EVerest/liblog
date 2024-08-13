@@ -368,9 +368,8 @@ void init(const std::string& logconf, std::string process_name) {
     global_level = get_level_from_filter(parsed_filter);
 
     if (not settings.has_section("Sinks")) {
-        std::cerr << "No \"Sinks\" section in the logging configuration, at least one sink has be be present"
-                  << std::endl;
-        return; // FIXME: throw an exception here?
+        EVEREST_INTERNAL_LOG_AND_THROW(EverestConfigError(
+            std::string("No \"Sinks\" section in the logging configuration, at least one sink has be be present")));
     }
 
     for (auto sink : settings["Sinks"].get_section()) {
