@@ -36,7 +36,9 @@ endif()
 
 # library dependencies
 # use cmakes FindBoost module until we require Boost 1.70+ which provides its own BoostConfig.cmake
-cmake_policy(SET CMP0167 OLD)
+if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.30")
+    cmake_policy(SET CMP0167 OLD)
+endif()
 if (LIBLOG_USE_BOOST_FILESYSTEM) 
     message(STATUS "Using boost/filesystem instead of std::filesystem")
     find_package(Boost COMPONENTS log_setup log filesystem REQUIRED)
