@@ -5,8 +5,8 @@
 #include <fstream>
 #include <mutex>
 
-#include <gtest/gtest.h>
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
 #include <spdlog/sinks/base_sink.h>
 
 #include <everest/exceptions.hpp>
@@ -259,7 +259,8 @@ TEST_F(LibLogUnitTest, test_init_syslog_sink_filtered) {
 TEST_F(LibLogUnitTest, test_trace) {
     auto trace_str = Everest::Logging::trace();
 #ifdef WITH_LIBBACKTRACE
-    EXPECT_THAT(trace_str, ::testing::StartsWith("#0: Everest::Logging::tests::LibLogUnitTest_test_trace_Test::TestBody()"));
+    EXPECT_THAT(trace_str,
+                ::testing::StartsWith("#0: Everest::Logging::tests::LibLogUnitTest_test_trace_Test::TestBody()"));
 #else
     ASSERT_EQ(trace_str, "Backtrace functionality not built in\n");
 #endif
