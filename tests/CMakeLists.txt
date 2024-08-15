@@ -10,12 +10,16 @@ target_include_directories(log
 target_link_libraries(${TEST_TARGET_NAME} PRIVATE
         everest::log
         GTest::gtest_main
-        GTest::gtest_main
+        GTest::gmock_main
 )
 
 target_sources(${TEST_TARGET_NAME} PRIVATE
     liblog_test.cpp
 )
+
+if (BUILD_BACKTRACE_SUPPORT)
+    target_compile_definitions(${TEST_TARGET_NAME} PRIVATE WITH_LIBBACKTRACE)
+endif()
 
 add_test(${TEST_TARGET_NAME} ${TEST_TARGET_NAME})
 
