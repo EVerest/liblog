@@ -3,9 +3,8 @@
 set -e
 
 copy_logs() {
-    ls build
     cp build/Testing/Temporary/LastTest.log /ext/ctest-report
-    cp -R build/everest-log_gcovr_coverage /ext/gcovr_coverage
+    cp -R build/everest-log_gcovr_coverage /ext/gcovr-coverage
 }
 
 cmake \
