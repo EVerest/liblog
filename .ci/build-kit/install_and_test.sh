@@ -13,3 +13,5 @@ cmake \
 ninja -j$(nproc) -C build install
 
 ninja -j$(nproc) -C build test
+
+ninja -j$(nproc) -C build everest-log_gcovr_coverage

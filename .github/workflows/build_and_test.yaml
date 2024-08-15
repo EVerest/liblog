@@ -53,8 +53,13 @@ jobs:
           build-kit run-script install_and_test
       - name: Archive test results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: ctest-report
           path: /workspace/build/tests/Testing/Temporary/LastTest.log
-
+      - name: Archive coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gcovr-coverage
+          path: /workspace/build/everest-log_gcovr_coverage
