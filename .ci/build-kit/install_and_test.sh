@@ -13,7 +13,7 @@ cmake \
 ninja -j$(nproc) -C build install
 
 trap "cp build/Testing/Temporary/LastTest.log /ext/ctest-report" EXIT
-trap "cp -R /workspace/build/everest-log_gcovr_coverage /ext/gcovr_coverage" EXIT
+trap "cp -R build/everest-log_gcovr_coverage /ext/gcovr_coverage" EXIT
 
 ninja -j$(nproc) -C build test
 
