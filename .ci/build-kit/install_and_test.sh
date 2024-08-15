@@ -14,4 +14,6 @@ ninja -j$(nproc) -C build install
 
 ninja -j$(nproc) -C build test
 
+pip install gcovr==6
+
 ninja -j$(nproc) -C build everest-log_gcovr_coverage
