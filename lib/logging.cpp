@@ -432,13 +432,13 @@ void init(const std::string& logconf, std::string process_name) {
 
             formatter->add_flag<Everest::Logging::EverestLevelFormatter>('l').set_pattern(format);
             auto syslog_sink =
-                std::make_shared<SyslogFilterSink>(parsed_filter, process_name, 0, LOG_USER, enable_formatting);
+                std::make_shared<SyslogFilterSink>(parsed_filter, current_process_name, 0, LOG_USER, enable_formatting);
             syslog_sink->set_formatter(std::move(formatter));
             sinks.push_back(syslog_sink);
         }
     }
 
-    update_process_name(process_name);
+    update_process_name(current_process_name);
 
     EVLOG_debug << "Logger initialized (using " << logconf << ")...";
 }
