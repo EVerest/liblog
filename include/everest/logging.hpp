@@ -45,7 +45,7 @@ struct LogSource {
         file(file), line(line), function(function) {
     }
 
-    LogSource(const std::string& function) : function(function), log_file(false), log_line(false) {
+    explicit LogSource(const std::string& function) : function(function), log_file(false), log_line(false) {
     }
 };
 
@@ -57,7 +57,7 @@ public:
     EverestLogger(const std::string& function, spdlog::level::level_enum level) :
         function(function), level(level), log_file(false), log_line(false), log_function(true) {
     }
-    EverestLogger(spdlog::level::level_enum level) :
+    explicit EverestLogger(spdlog::level::level_enum level) :
         level(level), log_file(false), log_line(false), log_function(false) {
     }
 
