@@ -31,6 +31,7 @@ configure_file(logging_configs/textfile_verb.ini logging_configs/textfile_verb.i
 configure_file(logging_configs/textfile_verb_rotate.ini logging_configs/textfile_verb_rotate.ini COPYONLY)
 configure_file(logging_configs/textfile_verb_rotate_on_open.ini logging_configs/textfile_verb_rotate_on_open.ini COPYONLY)
 configure_file(logging_configs/textfile_verb_broken_filename.ini logging_configs/textfile_verb_broken_filename.ini COPYONLY)
+configure_file(logging_configs/textfile_verb_broken_format_string.ini logging_configs/textfile_verb_broken_format_string.ini COPYONLY)
 configure_file(logging_configs/textfile_debg.ini logging_configs/textfile_debg.ini COPYONLY)
 configure_file(logging_configs/textfile_info.ini logging_configs/textfile_info.ini COPYONLY)
 configure_file(logging_configs/textfile_warn.ini logging_configs/textfile_warn.ini COPYONLY)

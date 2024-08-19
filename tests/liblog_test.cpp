@@ -272,6 +272,24 @@ TEST_F(LibLogUnitTest, test_init_textfile_sink_verb_broken_filename) {
     ASSERT_EQ(count_log_entries(file_name), 1);
 }
 
+TEST_F(LibLogUnitTest, test_init_textfile_sink_verb_broken_format_string) {
+    auto log_dir = std::filesystem::path("liblog_test_logs_verb_rotate_broken_format_string");
+    std::filesystem::remove_all(log_dir);
+    auto file_name = log_dir / "BrokenFormatString%s00000.log";
+    Everest::Logging::init("logging_configs/textfile_verb_broken_format_string.ini", "EVerest");
+    log_with_all_loglevels();
+    spdlog::default_logger()->flush();
+
+    auto count = 0;
+    for (auto& entry : std::filesystem::directory_iterator(log_dir)) {
+        count += 1;
+    }
+
+    ASSERT_EQ(count, 5);
+
+    ASSERT_EQ(count_log_entries(file_name), 1);
+}
+
 TEST_F(LibLogUnitTest, test_init_syslog_sink) {
     Everest::Logging::init("logging_configs/syslog.ini", "EVerest");
     log_with_all_loglevels();
