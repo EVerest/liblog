@@ -86,11 +86,23 @@ std::string get_process_name() {
     auto proc = "/proc/" + std::to_string(pid) + "/cmdline";
     fs::path proc_path = fs::path(proc);
     std::ifstream cmdline_file(proc_path.c_str());
+    std::vector<std::string> cmdline;
     if (cmdline_file.is_open()) {
-        std::string cmdline;
-        cmdline_file >> cmdline;
-        auto cmdline_path = fs::path(cmdline);
-        process_name = cmdline_path.filename();
+        std::string entry;
+        char input;
+        while (cmdline_file.get(input)) {
+            if (input == '\0') {
+                cmdline.push_back(entry);
+                entry = "";
+            } else {
+                entry += input;
+            }
+        }
+        if (not cmdline.empty()) {
+            auto cmdline_path = fs::path(cmdline.at(0));
+            process_name = cmdline_path.filename();
+        }
+        cmdline_file.close();
     }
     return process_name;
 }
