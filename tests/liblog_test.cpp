@@ -228,6 +228,32 @@ TEST_F(LibLogUnitTest, test_init_textfile_sink_verb_rotate) {
     ASSERT_EQ(count, 5);
 }
 
+TEST_F(LibLogUnitTest, test_init_textfile_sink_verb_rotate_on_open) {
+    auto log_dir = std::filesystem::path("liblog_test_logs_verb_rotate_on_open");
+    std::filesystem::remove_all(log_dir);
+    Everest::Logging::init("logging_configs/textfile_verb_rotate_on_open.ini", "EVerest");
+    log_with_all_loglevels();
+    spdlog::default_logger()->flush();
+
+    auto count = 0;
+    for (auto& entry : std::filesystem::directory_iterator(log_dir)) {
+        count += 1;
+    }
+
+    ASSERT_EQ(count, 4);
+
+    Everest::Logging::init("logging_configs/textfile_verb_rotate_on_open.ini", "EVerest");
+    log_with_all_loglevels();
+    spdlog::default_logger()->flush();
+
+    auto count2 = 0;
+    for (auto& entry : std::filesystem::directory_iterator(log_dir)) {
+        count2 += 1;
+    }
+
+    ASSERT_EQ(count2, 5);
+}
+
 TEST_F(LibLogUnitTest, test_init_textfile_sink_verb_broken_filename) {
     auto log_dir = std::filesystem::path("liblog_test_logs_verb_rotate_broken_filename");
     std::filesystem::remove_all(log_dir);

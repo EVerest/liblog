@@ -432,10 +432,11 @@ void init(const std::string& logconf, std::string process_name) {
 
             auto file_name = sink["FileName"].get<std::string>().get_value_or("%5N.log");
             auto rotation_size = sink["RotationSize"].get<std::size_t>().get_value_or(0);
+            auto rotate_on_open = sink["RotateOnOpen"].get<bool>().get_value_or(false);
             auto max_files = sink["MaxFiles"].get<std::size_t>().get_value_or(0);
 
-            auto file_sink =
-                std::make_shared<TextFileFilterSink>(parsed_filter, file_name, rotation_size, max_files, false);
+            auto file_sink = std::make_shared<TextFileFilterSink>(parsed_filter, file_name, rotation_size, max_files,
+                                                                  rotate_on_open);
             file_sink->set_formatter(std::move(formatter));
             sinks.push_back(file_sink);
         } else if (destination == "Syslog") {
