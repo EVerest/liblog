@@ -51,7 +51,7 @@ jobs:
     uses: everest/everest-ci/.github/workflows/deploy-single-docker-image.yml@v1.3.1
     needs: setup-env
     secrets:
-      SA_GITHUB_PAT: ${{ github.token }}
+      SA_GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
       SA_GITHUB_USERNAME: ${{ github.actor }}
     permissions:
       contents: read
