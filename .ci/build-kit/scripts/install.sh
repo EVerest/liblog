@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ninja -C build install
+ninja -C "$EXT_MOUNT/build" install
 retVal=$?
 
 if [ $retVal -ne 0 ]; then

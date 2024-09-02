@@ -13,7 +13,7 @@ if [ $retVal -ne 0 ]; then
     exit $retVal
 fi
 
-ninja -C build
+ninja -C "$EXT_MOUNT/build"
 retVal=$?
 if [ $retVal -ne 0 ]; then
     echo "Compiling failed with return code $retVal"

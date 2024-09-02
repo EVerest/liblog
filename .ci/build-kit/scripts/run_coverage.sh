@@ -1,6 +1,6 @@
 #!/bin/sh
 
-ninja -C build everest-log_gcovr_coverage
+ninja -C "$EXT_MOUNT/build" everest-log_gcovr_coverage
 retVal=$?
 
 # Copy the generated coverage report to the mounted directory in any case
