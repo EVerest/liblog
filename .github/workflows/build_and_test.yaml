@@ -1,7 +1,4 @@
-# Please reference work here https://github.com/EVerest/everest-core/tree/main/.github/workflows
-# TODO: modify to reuse the above workflow to DRY up CI.
-
-name: Build and test liblog
+name: Build, Lint and Test
 on:
   pull_request:
   workflow_dispatch:
@@ -14,6 +11,13 @@ on:
         options:
           - 'ubuntu-22.04'
           - 'large-ubuntu-22.04-xxl'
+  schedule:
+    - cron: '33 13,1 * * *'
+
+env:
+  DOCKER_REGISTRY: ghcr.io
+  EVEREST_CI_VERSION: v1.3.1
+
 jobs:
   lint:
     name: Lint
@@ -24,14 +28,53 @@ jobs:
         with:
           path: source
       - name: Run clang-format
-        uses: everest/everest-ci/github-actions/run-clang-format@v1.1.0
+        uses: everest/everest-ci/github-actions/run-clang-format@v1.3.1
         with:
           source-dir: source
           extensions: hpp,cpp
           exclude: cache
-  install_and_test:
-    name: Install and test
+
+  # Since env variables can't be passed to reusable workflows, we need to pass them as outputs
+  setup-env:
+    name: Setup Environment
     runs-on: ${{ inputs.runner || 'ubuntu-22.04' }}
+    outputs:
+      docker_registry: ${{ env.DOCKER_REGISTRY }}
+      everest_ci_version: ${{ env.EVEREST_CI_VERSION }}
+    steps:
+      - id: check
+        run: |
+          echo "Setting up environment"
+
+  build-and-push-build-kit:
+    name: Build and Push Build Kit
+    uses: everest/everest-ci/.github/workflows/deploy-single-docker-image.yml@v1.3.1
+    needs: setup-env
+    secrets:
+      SA_GITHUB_PAT: ${{ github.token }}
+      SA_GITHUB_USERNAME: ${{ github.actor }}
+    permissions:
+      contents: read
+      packages: write
+    with:
+      image_name: ${{ github.event.repository.name }}/build-kit-${{ github.event.repository.name }}
+      directory: .ci/build-kit/docker
+      docker_registry: ${{ needs.setup-env.outputs.docker_registry }}
+      github_ref_before: ${{ github.event.before }}
+      github_ref_after: ${{ github.event.after }}
+      platforms: linux/amd64
+      depends_on_paths: |
+        .ci/build-kit
+        .github/workflows/build_and_test.yaml
+      build_args: |
+        BASE_IMAGE_TAG=${{ needs.setup-env.outputs.everest_ci_version }}
+
+  build:
+    name: Build and Unit Tests
+    needs: build-and-push-build-kit
+    runs-on: ${{ inputs.runner || 'ubuntu-22.04' }}
+    env:
+      BUILD_KIT_IMAGE: ${{ needs.build-and-push-build-kit.outputs.one_image_tag_long }}
     steps:
       - name: Checkout liblog
         uses: actions/checkout@v3
@@ -40,26 +83,54 @@ jobs:
       - name: Setup run scripts
         run: |
           mkdir scripts
-          rsync -a source/.ci/build-kit/ scripts
+          rsync -a source/.ci/build-kit/scripts scripts
       - name: Pull docker container
         run: |
-          docker pull --platform=linux/x86_64 --quiet ghcr.io/everest/build-kit-alpine:latest
-          docker image tag ghcr.io/everest/build-kit-alpine:latest build-kit
-      - name: Run install with tests
+          docker pull --platform=linux/x86_64 --quiet ${{ env.BUILD_KIT_IMAGE }}
+          docker image tag ${{ env.BUILD_KIT_IMAGE }} build-kit
+      - name: Compile
         run: |
           docker run \
-          --volume "$(pwd):/ext" \
-          --name test-container \
-          build-kit run-script install_and_test
+          --volume "${{ github.workspace }}:/ext" \
+          --name compile-container \
+          build-kit run-script compile
+          docker commit compile-container build-image
+      - name: Run unit tests
+        run: |
+          docker run \
+          --volume "${{ github.workspace }}:/ext" \
+          --name unit-test-container \
+          build-image run-script run_unit_tests
+          docker commit unit-test-container unit-test-image
       - name: Archive test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ctest-report
           path: ${{ github.workspace }}/ctest-report
+      - name: Run coverage
+        run: |
+          docker run \
+          --volume "${{ github.workspace }}:/ext" \
+          --name coverage-container \
+          unit-test-image run-script run_coverage
       - name: Archive coverage report
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: gcovr-coverage
           path: ${{ github.workspace }}/gcovr-coverage
+      - name: Create dist
+        run: |
+          docker run \
+          --volume "${{ github.workspace }}:/ext" \
+          --name install-container \
+          build-image run-script install
+      - name: Tar dist dir and keep permissions
+        run: |
+          tar -czf dist.tar.gz dist
+      - name: Upload dist artifact
+        uses: actions/upload-artifact@v4.3.3
+        with:
+          path: dist.tar.gz
+          name: dist
