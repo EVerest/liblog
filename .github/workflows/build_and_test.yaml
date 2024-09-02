@@ -17,7 +17,7 @@ on:
 jobs:
   ci:
     name: Build, Lint and Test
-    uses: everest/everest-ci/.github/workflows/continuous_integration.yaml@feature/add-reusable-ci-workflow
+    uses: everest/everest-ci/.github/workflows/continuous_integration.yml@feature/add-reusable-ci-workflow
     permissions:
       contents: read
       packages: write
