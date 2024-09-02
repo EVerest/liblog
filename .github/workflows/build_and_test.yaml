@@ -83,7 +83,7 @@ jobs:
       - name: Setup run scripts
         run: |
           mkdir scripts
-          rsync -a source/.ci/build-kit/scripts scripts
+          rsync -a source/.ci/build-kit/scripts/ scripts
       - name: Pull docker container
         run: |
           docker pull --platform=linux/x86_64 --quiet ${{ env.BUILD_KIT_IMAGE }}
