@@ -90,7 +90,6 @@ if(LIBLOG_BUILD_TESTING)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 
     include(CTest)
-    enable_testing()
     add_subdirectory(tests)
 
     setup_target_for_coverage_gcovr_html(
