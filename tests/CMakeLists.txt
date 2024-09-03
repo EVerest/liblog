@@ -1,3 +1,18 @@
+setup_target_for_coverage_gcovr_html(
+    NAME ${PROJECT_NAME}_gcovr_coverage
+    EXECUTABLE ctest
+    DEPENDENCIES ${PROJECT_NAME}_tests
+    EXCLUDE "examples/*"
+)
+
+setup_target_for_coverage_lcov(
+    NAME ${PROJECT_NAME}_lcov_coverage
+    EXECUTABLE ctest
+    DEPENDENCIES ${PROJECT_NAME}_tests
+    LCOV_ARGS "--ignore-errors=empty,missing"
+    EXCLUDE "examples/*"
+)
+
 set(TEST_TARGET_NAME ${PROJECT_NAME}_tests)
 add_executable(${TEST_TARGET_NAME})
 
