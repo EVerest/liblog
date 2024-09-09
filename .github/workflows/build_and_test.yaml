@@ -21,12 +21,13 @@ jobs:
     permissions:
       contents: read
       packages: write
+    secrets:
+      coverage_deploy_token: ${{ secrets.SA_GITHUB_PAT }}
     with:
       runner: ${{ inputs.runner || 'ubuntu-22.04' }}
       docker_registry: ghcr.io
       ctest_report_path: ctest-report
       coverage_report_path: gcovr-coverage
       coverage_deploy_target_repo: EVerest/everest.github.io
-      coverage_deploy_token: ${{ secrets.SA_GITHUB_PAT }}
       dist_path: dist
       use_build_cache: false # LTODO: test true
