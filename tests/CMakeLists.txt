@@ -5,6 +5,13 @@ setup_target_for_coverage_gcovr_html(
     EXCLUDE "examples/*"
 )
 
+setup_target_for_coverage_gcovr_xml(
+    NAME ${PROJECT_NAME}_gcovr_coverage_xml
+    EXECUTABLE ctest
+    DEPENDENCIES ${PROJECT_NAME}_tests
+    EXCLUDE "examples/*"
+)
+
 setup_target_for_coverage_lcov(
     NAME ${PROJECT_NAME}_lcov_coverage
     EXECUTABLE ctest
