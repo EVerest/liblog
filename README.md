@@ -1,4 +1,4 @@
-# C++ logging and exceptions library for the EVerest framework
+# C++ logging and exceptions library for the EVerest framework ![Code Coverage](https://everest.github.io/ci-artifacts/EVerest/liblog/coverage-badge/coverage-badge.svg)
 
 Provides a common infrastructure for all EVerest modules on logging, wrapped around Boost.Log.
 
