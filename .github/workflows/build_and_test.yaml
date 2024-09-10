@@ -25,9 +25,10 @@ jobs:
       coverage_deploy_token: ${{ secrets.SA_GITHUB_PAT }}
     with:
       runner: ${{ inputs.runner || 'ubuntu-22.04' }}
+      artifact_deploy_target_repo: EVerest/everest.github.io
       docker_registry: ghcr.io
       ctest_report_path: ctest-report
       coverage_report_path: gcovr-coverage
-      coverage_deploy_target_repo: EVerest/everest.github.io
+      coverage_xml_path: gcovr-coverage-xml.xml
       dist_path: dist
       use_build_cache: false # LTODO: test true
