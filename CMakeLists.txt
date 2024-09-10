@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 
 project(everest-log
-    VERSION 0.2.1
+    VERSION 0.3
     DESCRIPTION "EVerest logging library"
     LANGUAGES CXX C
 )
@@ -18,9 +18,27 @@ option(BUILD_EXAMPLES "Build liblog example binaries." OFF)
 option(LOG_INSTALL "Install the library (shared data might be installed anyway)" ${EVC_MAIN_PROJECT})
 option(CMAKE_RUN_CLANG_TIDY "Run clang-tidy" OFF)
 option(LIBLOG_USE_BOOST_FILESYSTEM "Usage of boost/filesystem.hpp instead of std::filesystem" OFF)
+option(LIBLOG_OMIT_FILE_AND_LINE_NUMBERS "Always omit file and line numbers in logs" OFF)
+
+if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
+    set(LIBLOG_BUILD_TESTING ON)
+    evc_include(CodeCoverage)
+
+    append_coverage_compiler_flags()
+endif()
+
+if(NOT DISABLE_EDM)
+    evc_setup_edm()
+
+    # In EDM mode, we can't install exports (because the dependencies usually do not install their exports)
+    set(LOG_INSTALL OFF)
+endif()
 
 # library dependencies
-
+# use cmakes FindBoost module until we require Boost 1.70+ which provides its own BoostConfig.cmake
+if("${CMAKE_VERSION}" VERSION_GREATER_EQUAL "3.30")
+    cmake_policy(SET CMP0167 OLD)
+endif()
 if (LIBLOG_USE_BOOST_FILESYSTEM) 
     message(STATUS "Using boost/filesystem instead of std::filesystem")
     find_package(Boost COMPONENTS log_setup log filesystem REQUIRED)
@@ -68,27 +86,11 @@ endif()
 
 
 # testing
-if((${CMAKE_PROJECT_NAME} STREQUAL ${PROJECT_NAME} OR ${PROJECT_NAME}_BUILD_TESTING) AND BUILD_TESTING)
-    include(CTest)
-    add_subdirectory(tests)
-    
+if(LIBLOG_BUILD_TESTING)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 
-    evc_include(CodeCoverage)
-
-    append_coverage_compiler_flags()
-
-    setup_target_for_coverage_gcovr_html(
-        NAME gcovr_coverage_liblog
-        EXECUTABLE test_config
-        DEPENDENCIES test_config everest
-    )
-
-    setup_target_for_coverage_lcov(
-        NAME lcov_coverage_liblog
-        EXECUTABLE test_config
-        DEPENDENCIES test_config everest
-    )
+    include(CTest)
+    add_subdirectory(tests)
 else()
     message("Not running unit tests")
 endif()

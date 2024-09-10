@@ -16,8 +16,10 @@ target_include_directories(log
 target_link_libraries(log
     PUBLIC
         Boost::log
+        spdlog::spdlog
     PRIVATE
         Boost::log_setup
+        fmt::fmt
 )
 
 if (LIBLOG_USE_BOOST_FILESYSTEM)
@@ -28,6 +30,14 @@ if (LIBLOG_USE_BOOST_FILESYSTEM)
     target_compile_definitions(log
         PRIVATE
             LIBLOG_USE_BOOST_FILESYSTEM
+    )
+endif()
+
+if (LIBLOG_OMIT_FILE_AND_LINE_NUMBERS)
+    message(STATUS "liblog: Omitting file names and line numbers in all log messages")
+    target_compile_definitions(log
+        PRIVATE
+            LIBLOG_OMIT_FILE_AND_LINE_NUMBERS
     )
 endif()
 
