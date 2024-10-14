@@ -138,7 +138,7 @@ void init(const std::string& logconf, std::string process_name) {
     BOOST_LOG_FUNCTION();
 
     // First thing - register the custom formatter for EscMessage
-    logging::register_formatter_factory("EscMessage", boost::make_shared<escaped_message_formatter_factory>());
+    logging::register_formatter_factory("EscapedMessage", boost::make_shared<escaped_message_formatter_factory>());
 
     // add useful attributes
     logging::add_common_attributes();
