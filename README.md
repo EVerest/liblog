@@ -1,11 +1,12 @@
 # C++ logging and exceptions library for the EVerest framework
 
+[![Total Code Coverage](https://everest.github.io/ci-artifacts/EVerest/liblog/coverage-badge/coverage-badge.svg)](https://everest.github.io/ci-artifacts/EVerest/liblog/coverage-report/index.html)
+
 Provides a common infrastructure for all EVerest modules on logging, wrapped around Boost.Log.
 
 All documentation and the issue tracking can be found in our main repository here: https://github.com/EVerest/everest
 
 ## Build instructions
-==================
 
 Clone the repository:
 

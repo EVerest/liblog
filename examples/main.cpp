@@ -1,13 +1,25 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2021 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
+#include <everest/exceptions.hpp>
 #include <everest/logging.hpp>
 
 #include <iostream>
+#include <thread>
 
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
+
+struct TestStruct {
+    std::string hello;
+    int integer;
+};
+
+std::ostream& operator<<(std::ostream& os, const TestStruct& test) {
+    os << "TestStruct: hello " << test.hello << " " << test.integer;
+    return os;
+}
 
 int main(int argc, char* argv[]) {
     po::options_description desc("EVerest::log example");
@@ -28,7 +40,7 @@ int main(int argc, char* argv[]) {
     if (vm.count("logconf") != 0) {
         logging_config = vm["logconf"].as<std::string>();
     }
-    Everest::Logging::init(logging_config, "hello there");
+    Everest::Logging::init(logging_config, "hello there. EVerest");
 
     EVLOG_debug << "logging_config was set to " << logging_config;
 
@@ -39,5 +51,33 @@ int main(int argc, char* argv[]) {
     EVLOG_error << "This is a ERROR message.";
     EVLOG_critical << "This is a CRITICAL message.";
 
+    TestStruct test_struct{"there", 42};
+    EVLOG_info << "This logs a TestStruct using a operator<<: " << test_struct;
+    EVLOG_info << "Test logs with an additional std::endl at the end" << std::endl;
+    EVLOG_info << "Test logs with different types: " << 42 << " " << 12.34;
+
+    EVLOG_critical << Everest::Logging::LogSource("file.name", 42, "function_with_file_name_and_line_nr()")
+                   << "This is a CRITICAL message";
+    EVLOG_critical << Everest::Logging::LogSource("function_without_file_name_or_line_nr()")
+                   << "This is a CRITICAL message";
+
+    auto t = std::thread([]() { EVLOG_info << "From another thread"; });
+    t.join();
+
+    try {
+        EVTHROW(std::runtime_error("hello there"));
+
+    } catch (...) {
+    }
+    try {
+        EVLOG_AND_THROW(std::runtime_error("hello there"));
+
+    } catch (...) {
+    }
+    try {
+        EVTHROW(EVEXCEPTION(Everest::EverestInternalError, "Something", " with", " multiple", " args"));
+
+    } catch (...) {
+    }
     return 0;
 }

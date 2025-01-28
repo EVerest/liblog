@@ -1,7 +1,4 @@
-# Please reference work here https://github.com/EVerest/everest-core/tree/main/.github/workflows
-# TODO: modify to reuse the above workflow to DRY up CI.
-
-name: Build and test liblog
+name: Build, Lint and Test
 on:
   pull_request:
   workflow_dispatch:
@@ -14,47 +11,24 @@ on:
         options:
           - 'ubuntu-22.04'
           - 'large-ubuntu-22.04-xxl'
-jobs:
-  lint:
-    name: Lint
-    runs-on: ${{ inputs.runner || 'ubuntu-22.04' }}
-    steps:
-      - name: Checkout liblog
-        uses: actions/checkout@v3
-        with:
-          path: source
-      - name: Run clang-format
-        uses: everest/everest-ci/github-actions/run-clang-format@v1.1.0
-        with:
-          source-dir: source
-          extensions: hpp,cpp
-          exclude: cache
-  install_and_test:
-    name: Install and test
-    runs-on: ${{ inputs.runner || 'ubuntu-22.04' }}
-    steps:
-      - name: Checkout liblog
-        uses: actions/checkout@v3
-        with:
-          path: source
-      - name: Setup run scripts
-        run: |
-          mkdir scripts
-          rsync -a source/.ci/build-kit/ scripts
-      - name: Pull docker container
-        run: |
-          docker pull --platform=linux/x86_64 --quiet ghcr.io/everest/build-kit-alpine:latest
-          docker image tag ghcr.io/everest/build-kit-alpine:latest build-kit
-      - name: Run install with tests
-        run: |
-          docker run \
-          --volume "$(pwd):/ext" \
-          --name test-container \
-          build-kit run-script install_and_test
-      - name: Archive test results
-        if: always()
-        uses: actions/upload-artifact@v3
-        with:
-          name: ctest-report
-          path: /workspace/build/tests/Testing/Temporary/LastTest.log
+  schedule:
+    - cron: '33 13,1 * * *'
 
+jobs:
+  ci:
+    name: Build, Lint and Test
+    uses: everest/everest-ci/.github/workflows/continuous_integration.yml@feature/add-reusable-ci-workflow
+    permissions:
+      contents: read
+      packages: write
+    secrets:
+      coverage_deploy_token: ${{ secrets.SA_GITHUB_PAT }}
+    with:
+      runner: ${{ inputs.runner || 'ubuntu-22.04' }}
+      artifact_deploy_target_repo: EVerest/everest.github.io
+      docker_registry: ghcr.io
+      ctest_report_path: ctest-report
+      coverage_report_path: gcovr-coverage
+      coverage_xml_path: gcovr-coverage-xml.xml
+      dist_path: dist
+      use_build_cache: true
