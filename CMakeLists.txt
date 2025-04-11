@@ -44,7 +44,7 @@ install(
 
 if (LOG_INSTALL)
     install(
-        TARGETS log
+        TARGETS everest_log
         EXPORT log-targets
     )
 
