@@ -1,5 +1,5 @@
 add_library(everest_log)
-add_library(everest::log ALIAS log)
+add_library(everest::log ALIAS everest_log)
 
 target_sources(everest_log
     PRIVATE
