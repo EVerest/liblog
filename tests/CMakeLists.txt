@@ -19,7 +19,7 @@ add_test(${TEST_TARGET_NAME} ${TEST_TARGET_NAME})
 
 if (EVEREST_LIBLOG_BUILD_TESTING)
     evc_include(CodeCoverage)
-    append_coverage_compiler_flags_to_target(log)
+    append_coverage_compiler_flags_to_target(everest_log)
 
     setup_target_for_coverage_gcovr_html(
         NAME ${PROJECT_NAME}_gcovr_coverage
