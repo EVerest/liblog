@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright 2020 - 2025 Pionix GmbH and Contributors to EVerest
 #ifdef LIBLOG_USE_BOOST_FILESYSTEM
 #include <boost/filesystem.hpp>
 #else
@@ -47,6 +47,27 @@ namespace expr = logging::expressions;
 
 namespace Everest {
 namespace Logging {
+namespace {
+bool is_initialized = false;
+
+bool suppress_info_and_below(const boost::log::attribute_value_set& attrs) {
+    auto severity_attr = attrs["Severity"];
+    if (severity_attr) {
+        severity_level level = severity_attr.extract<severity_level>().get();
+        return level > severity_level::info;
+    }
+    return false;
+}
+
+struct LogSuppressionInitializer {
+    LogSuppressionInitializer() {
+        boost::log::core::get()->set_filter(&suppress_info_and_below);
+    }
+};
+
+static LogSuppressionInitializer suppress_logs_until_init;
+} // anonymous namespace
+
 std::array<std::string, 6> severity_strings = {
     "VERB", //
     "DEBG", //
@@ -136,6 +157,12 @@ void init(const std::string& logconf) {
 
 void init(const std::string& logconf, std::string process_name) {
     BOOST_LOG_FUNCTION();
+
+    if (is_initialized)
+        return;
+    is_initialized = true;
+
+    boost::log::core::get()->reset_filter();
 
     // First thing - register the custom formatter for EscMessage
     logging::register_formatter_factory("EscapedMessage", boost::make_shared<escaped_message_formatter_factory>());
