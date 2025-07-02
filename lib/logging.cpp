@@ -134,6 +134,11 @@ struct escaped_message_formatter_factory : public logging::formatter_factory<cha
     }
 };
 
+void init() {
+    logging::core::get()->remove_all_sinks();
+    logging::core::get()->set_logging_enabled(false);
+}
+
 void init(const std::string& logconf) {
     init(logconf, "");
 }
@@ -194,6 +199,7 @@ void init(const std::string& logconf, std::string process_name) {
         sink["SeverityStringColorCritical"].get<std::string>().get_value_or("");
 
     logging::init_from_settings(settings);
+    logging::core::get()->set_logging_enabled(true);
 
     EVLOG_debug << "Logger " << (is_initialized ? "re" : "") << "initialized (using " << logconf << ")...";
     is_initialized = true;

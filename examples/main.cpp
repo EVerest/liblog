@@ -25,6 +25,15 @@ int main(int argc, char* argv[]) {
     }
 
     // initialize logging as early as possible
+    Everest::Logging::init();
+    // since we initialized without any config the following messages should not logged at all:
+    EVLOG_verbose << "This is a VERBOSE message.";
+    EVLOG_debug << "This is a DEBUG message.";
+    EVLOG_info << "This is a INFO message.";
+    EVLOG_warning << "This is a WARNING message.";
+    EVLOG_error << "This is a ERROR message.";
+    EVLOG_critical << "This is a CRITICAL message.";
+
     std::string logging_config = "logging.ini";
     if (vm.count("logconf") != 0) {
         logging_config = vm["logconf"].as<std::string>();
