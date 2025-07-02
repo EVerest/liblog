@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright 2020 - 2023 Pionix GmbH and Contributors to EVerest
+// Copyright Pionix GmbH and Contributors to EVerest
 #ifdef LIBLOG_USE_BOOST_FILESYSTEM
 #include <boost/filesystem.hpp>
 #else
@@ -47,6 +47,10 @@ namespace expr = logging::expressions;
 
 namespace Everest {
 namespace Logging {
+namespace {
+bool is_initialized = false;
+}
+
 std::array<std::string, 6> severity_strings = {
     "VERB", //
     "DEBG", //
@@ -137,6 +141,11 @@ void init(const std::string& logconf) {
 void init(const std::string& logconf, std::string process_name) {
     BOOST_LOG_FUNCTION();
 
+    if (is_initialized) {
+        // this prevents us from registering the sinks multiple times which would lead to duplicate output
+        logging::core::get()->remove_all_sinks();
+    }
+
     // First thing - register the custom formatter for EscMessage
     logging::register_formatter_factory("EscapedMessage", boost::make_shared<escaped_message_formatter_factory>());
 
@@ -186,7 +195,8 @@ void init(const std::string& logconf, std::string process_name) {
 
     logging::init_from_settings(settings);
 
-    EVLOG_debug << "Logger initialized (using " << logconf << ")...";
+    EVLOG_debug << "Logger " << (is_initialized ? "re" : "") << "initialized (using " << logconf << ")...";
+    is_initialized = true;
 }
 
 void update_process_name(std::string process_name) {
